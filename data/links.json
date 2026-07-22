@@ -1,0 +1,23 @@
+{
+  "_comment": "标签→已上线应用映射。详情页按条目的 tags 匹配此处，渲染「拓展」rail。修改应用地址只改这里，不动代码。",
+  "apps": {
+    "养生日历": { "url": "https://liumingmusic.github.io/health-calendar/", "color": "#3a9d6e" },
+    "每日诗词": { "url": "https://liumingmusic.github.io/daily-poetry/", "color": "#2F4F4F" },
+    "成语故事": { "url": "https://liumingmusic.github.io/idiom-story/", "color": "#9E2B25" },
+    "历史上的今天": { "url": "https://liumingmusic.github.io/this-day-in-history/", "color": "#8B4513" },
+    "知识闯关": { "url": "https://liumingmusic.github.io/quiz-challenge/", "color": "#2E4A6B" }
+  },
+  "map": {
+    "节气": [{ "app": "养生日历", "label": "看今日节气养生建议" }],
+    "养生": [{ "app": "养生日历", "label": "看食养与健康建议" }],
+    "饮食": [{ "app": "养生日历", "label": "看节气食养建议" }],
+    "诗词": [{ "app": "每日诗词", "label": "读每日诗词" }],
+    "成语": [{ "app": "成语故事", "label": "听相关成语典故" }],
+    "历史": [{ "app": "历史上的今天", "label": "看今日历史" }],
+    "朝代": [{ "app": "历史上的今天", "label": "看历史上的今天" }],
+    "闯关": [{ "app": "知识闯关", "label": "做相关闯关题" }]
+  },
+  "reverse": {
+    "culture-hub": { "url": "https://liumingmusic.github.io/culture-hub/", "label": "中华文化通识门户" }
+  }
+}

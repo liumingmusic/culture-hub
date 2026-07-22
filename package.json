@@ -1,0 +1,20 @@
+{
+  "name": "culture-hub",
+  "version": "1.0.0",
+  "description": "中华文化通识 — 可浏览、可检索的中华文化地图门户（纯静态，零外部依赖）",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "python3 -m http.server 8080",
+    "serve": "python3 -m http.server 8080",
+    "build:data": "node scripts/build-data.js"
+  },
+  "keywords": [
+    "中华文化",
+    "通识",
+    "静态站",
+    "github-pages"
+  ],
+  "author": "liumingmusic",
+  "license": "MIT"
+}

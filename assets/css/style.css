@@ -1,0 +1,231 @@
+/* ===== 中华文化通识 · 宣纸·朱印 主题 ===== */
+:root {
+  --paper: #f7f1e3;
+  --paper-2: #f1e9d6;
+  --card: #ffffff;
+  --ink: #2b2b2b;
+  --ink-2: #8a8175;
+  --seal: #9e2b25;
+  --seal-soft: #c0463f;
+  --line: #e7ddc8;
+  --shadow: 0 2px 10px rgba(80, 60, 30, 0.08);
+  --shadow-hover: 0 6px 18px rgba(80, 60, 30, 0.14);
+  --serif: "Songti SC", "STSong", "SimSun", "Noto Serif SC", serif;
+  --kai: "STKaiti", "KaiTi", "Songti SC", serif;
+  --sans: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+  /* 六领域主色 */
+  --c-philosophy: #9e2b25;
+  --c-language: #2f4f4f;
+  --c-festival: #b8860b;
+  --c-history: #8b4513;
+  --c-art: #2e4a6b;
+  --c-life: #a0522d;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.7;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-image:
+    radial-gradient(circle at 12% 18%, rgba(158, 43, 37, 0.04) 0, transparent 42%),
+    radial-gradient(circle at 88% 82%, rgba(46, 74, 107, 0.04) 0, transparent 42%);
+  background-attachment: fixed;
+}
+
+a { color: var(--seal); text-decoration: none; }
+a:hover { color: var(--seal-soft); }
+
+/* ---------- 布局 ---------- */
+.wrap { max-width: 980px; margin: 0 auto; padding: 0 16px 64px; }
+
+/* ---------- 顶栏 ---------- */
+.topbar {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(247, 241, 227, 0.92);
+  backdrop-filter: saturate(140%) blur(6px);
+  border-bottom: 1px solid var(--line);
+}
+.topbar-inner {
+  max-width: 980px; margin: 0 auto; padding: 12px 16px;
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+}
+.brand { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.brand .seal {
+  width: 42px; height: 42px; flex: none;
+  display: grid; place-items: center;
+  background: var(--seal); color: #fff7ee;
+  font-family: var(--kai); font-size: 22px; font-weight: 700;
+  border-radius: 8px; box-shadow: inset 0 0 0 2px rgba(255, 247, 238, 0.35);
+}
+.brand .name { font-family: var(--serif); font-size: 20px; font-weight: 700; letter-spacing: 1px; }
+.brand .sub { font-size: 12px; color: var(--ink-2); margin-top: 1px; }
+
+.search-box {
+  margin-left: auto; flex: 1 1 240px; max-width: 360px;
+  display: flex; align-items: center; gap: 8px;
+  background: #fff; border: 1px solid var(--line); border-radius: 22px;
+  padding: 7px 14px; box-shadow: var(--shadow);
+}
+.search-box svg { width: 18px; height: 18px; flex: none; fill: var(--ink-2); }
+.search-box input {
+  border: none; outline: none; flex: 1; min-width: 0;
+  font-size: 15px; background: transparent; color: var(--ink);
+  font-family: var(--sans);
+}
+
+/* ---------- 通用卡片 ---------- */
+.card {
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: 14px; box-shadow: var(--shadow);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+.card:hover { transform: translateY(-3px); box-shadow: var(--shadow-hover); }
+
+.section-title {
+  font-family: var(--serif); font-weight: 700; font-size: 19px;
+  margin: 30px 0 14px; display: flex; align-items: center; gap: 10px;
+}
+.section-title::before {
+  content: ""; width: 6px; height: 20px; border-radius: 3px; background: var(--seal);
+}
+.section-title .more { margin-left: auto; font-size: 13px; font-weight: 400; color: var(--ink-2); font-family: var(--sans); }
+
+/* ---------- 今日通识卡 ---------- */
+.today {
+  margin-top: 22px; display: grid; grid-template-columns: 200px 1fr; gap: 18px;
+  padding: 18px; align-items: center; overflow: hidden; position: relative;
+}
+.today::after {
+  content: "今日通识"; position: absolute; top: 10px; right: 14px;
+  font-family: var(--kai); font-size: 13px; color: var(--seal); letter-spacing: 2px; opacity: .8;
+}
+.today .art { border-radius: 12px; overflow: hidden; }
+.today .art svg { width: 100%; height: auto; display: block; }
+.today h2 { font-family: var(--serif); font-size: 24px; margin: 4px 0 8px; }
+.today .summary { color: var(--ink-2); margin-bottom: 14px; }
+.today .tagline { font-size: 13px; color: var(--seal); }
+
+/* ---------- 领域宫格 ---------- */
+.domains { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.domain {
+  padding: 18px; cursor: pointer; position: relative; overflow: hidden;
+  border-top: 4px solid var(--dc, var(--seal));
+}
+.domain .d-icon {
+  width: 46px; height: 46px; border-radius: 12px; display: grid; place-items: center;
+  font-size: 24px; color: #fff; background: var(--dc, var(--seal)); margin-bottom: 10px;
+}
+.domain h3 { font-family: var(--serif); font-size: 19px; margin: 0 0 6px; }
+.domain .d-desc { font-size: 13px; color: var(--ink-2); min-height: 38px; }
+.domain .d-meta { font-size: 12px; color: var(--ink-2); margin-top: 10px; }
+.domain .d-meta b { color: var(--dc, var(--seal)); }
+
+/* ---------- 条目列表 ---------- */
+.entry-list { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.entry-item { padding: 14px 16px; cursor: pointer; border-left: 4px solid var(--dc, var(--seal)); }
+.entry-item h4 { font-family: var(--serif); font-size: 17px; margin: 0 0 6px; }
+.entry-item .e-sub { font-size: 12px; color: var(--seal); margin-bottom: 6px; }
+.entry-item p { font-size: 13.5px; color: var(--ink-2); margin: 0; }
+
+/* ---------- 标签 ---------- */
+.tags { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
+.tag {
+  font-size: 12px; padding: 3px 10px; border-radius: 12px;
+  background: var(--paper-2); color: var(--ink-2); border: 1px solid var(--line);
+}
+
+/* ---------- 详情页 ---------- */
+.detail-head { margin-top: 20px; }
+.detail-head .crumbs { font-size: 13px; color: var(--ink-2); margin-bottom: 6px; }
+.detail-head .crumbs a { color: var(--ink-2); }
+.detail-head h1 { font-family: var(--serif); font-size: 30px; margin: 4px 0 6px; }
+.detail-head .sub { color: var(--seal); font-size: 14px; margin-bottom: 12px; }
+.detail-art { border-radius: 14px; overflow: hidden; margin: 14px 0; border: 1px solid var(--line); }
+.detail-art svg { width: 100%; height: auto; display: block; }
+.detail-body { font-size: 16px; line-height: 1.95; color: #33312c; }
+.detail-body p { margin: 0 0 14px; text-indent: 2em; }
+
+/* 经典原文 */
+.classic {
+  margin: 18px 0; padding: 16px 18px; background: var(--paper-2);
+  border-left: 4px solid #b8860b; border-radius: 8px;
+}
+.classic .c-label { font-size: 12px; color: #8a6d2f; letter-spacing: 1px; margin-bottom: 8px; }
+.classic blockquote {
+  margin: 0; font-family: var(--kai); font-size: 18px; line-height: 1.9; color: #4a3b1c;
+}
+.classic .c-ref { font-size: 12px; color: #8a6d2f; margin-top: 6px; text-align: right; }
+
+/* 拓展 rail */
+.rail { margin: 26px 0 8px; }
+.rail .rail-title {
+  font-family: var(--serif); font-weight: 700; font-size: 17px; margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+}
+.rail .rail-title::before { content: "拓"; width: 26px; height: 26px; border-radius: 6px; background: var(--seal); color: #fff7ee; display: grid; place-items: center; font-size: 14px; }
+.rail-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.rail-card {
+  display: flex; align-items: center; gap: 12px; padding: 12px 14px; cursor: pointer;
+  border: 1px solid var(--line); border-radius: 12px; background: #fff;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.rail-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.rail-card .r-dot { width: 12px; height: 12px; border-radius: 50%; flex: none; }
+.rail-card .r-app { font-weight: 700; font-size: 15px; }
+.rail-card .r-label { font-size: 12.5px; color: var(--ink-2); }
+.rail-empty { font-size: 13px; color: var(--ink-2); }
+
+/* ---------- 搜索结果 ---------- */
+.search-group { margin-top: 18px; }
+.search-group .g-head {
+  font-family: var(--serif); font-weight: 700; font-size: 16px; padding-left: 10px;
+  border-left: 4px solid var(--dc, var(--seal)); margin-bottom: 10px;
+}
+.search-hl { background: #ffe9a8; color: #5a3d00; padding: 0 2px; border-radius: 3px; }
+.search-empty { text-align: center; color: var(--ink-2); padding: 40px 0; }
+
+/* ---------- 返回 ---------- */
+.btn-back {
+  display: inline-flex; align-items: center; gap: 6px; margin: 18px 0 0;
+  padding: 8px 14px; min-height: 42px; border-radius: 10px;
+  background: #fff; border: 1px solid var(--line); color: var(--seal); cursor: pointer;
+  font-size: 14px; font-family: var(--sans);
+}
+
+/* ---------- 页脚 ---------- */
+.foot { max-width: 980px; margin: 40px auto 0; padding: 22px 16px; border-top: 1px solid var(--line); color: var(--ink-2); font-size: 12.5px; text-align: center; }
+.foot a { color: var(--ink-2); }
+
+/* ---------- 进场动效 ---------- */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.fade { animation: fadeUp .35s ease both; }
+@media (prefers-reduced-motion: reduce) {
+  .fade, .card { animation: none !important; transition: none !important; }
+}
+
+/* ---------- 响应式：手机端单列 ---------- */
+@media (max-width: 720px) {
+  .domains { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .entry-list { grid-template-columns: 1fr; }
+  .today { grid-template-columns: 1fr; text-align: center; padding: 16px; }
+  .today .art { max-width: 200px; margin: 0 auto; }
+  .today .tagline { justify-content: center; }
+  .search-box { max-width: none; order: 3; flex-basis: 100%; margin-left: 0; }
+  .topbar-inner { gap: 10px; }
+  .detail-head h1 { font-size: 25px; }
+  .rail-cards { grid-template-columns: 1fr; }
+}
+@media (max-width: 420px) {
+  .domains { grid-template-columns: 1fr; }
+}
