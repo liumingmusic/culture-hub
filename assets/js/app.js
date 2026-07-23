@@ -201,7 +201,7 @@
       '">查看详情 →</button>' +
       "</div>" +
       "</section>" +
-      '<div class="section-title">六大领域 <span class="more">点领域卡进入分类</span></div>' +
+      '<div class="section-title">九大领域 <span class="more">点领域卡进入分类</span></div>' +
       '<div class="domains">' +
       domainsHTML +
       "</div>" +
