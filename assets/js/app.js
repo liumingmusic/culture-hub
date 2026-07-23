@@ -350,7 +350,12 @@
       "</div>" +
       "</div>" +
       '<div class="detail-art">' + art(e.art, e.domain) + "</div>" +
-      '<div class="detail-body"><p>' + esc(e.body) + "</p></div>" +
+      '<div class="detail-body">' +
+        e.body
+          .split(/\n\s*\n/)
+          .map(function (p) { return "<p>" + esc(p.trim()) + "</p>"; })
+          .join("") +
+        "</div>" +
       classicHTML +
       '<div class="tags">' + tagsHTML + "</div>" +
       '<div class="rail"><div class="rail-title">拓展 · 相关应用</div>' + railHTML + "</div>";

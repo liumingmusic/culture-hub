@@ -13,6 +13,10 @@ scripts/.cache/
 .idea/
 .vscode/
 
+# 本地验证产物（截图、临时目录，不入仓）
+_verify/
+screenshots/
+
 # 不提交密钥（本项目本就零 key，仅作保险）
 *.pem
 *.key
