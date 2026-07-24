@@ -1,1377 +1,213 @@
 # -*- coding: utf-8 -*-
-"""生成扩充后的 entries.json（约 89 条，每条多段长文）。
-分多次 cat >> 追加各 domain，最后追加 dump。
-"""
-import json
-import re
+# 本文件由 scripts/_emit.py 从 data/entries.json 生成（仅元数据）。
+# 正文长文集中在 scripts/bodies.py 的 BODIES 字典中，便于逐篇维护。
+import json, collections
+from bodies import BODIES, EXTRA, EXTRA2
+from bodies_extra3 import EXTRA3
+from bodies_hanzi import BODIES as _B_HZ
+from bodies_jiesu import BODIES as _B_JS
+from bodies_yishu import BODIES as _B_YS
+from bodies_liyi import BODIES as _B_LY
+from bodies_yiyao import BODIES as _B_YY
+from bodies_keji import BODIES as _B_KJ
+from bodies_dili import BODIES as _B_DL
+for _b in (_B_HZ, _B_JS, _B_YS, _B_LY, _B_YY, _B_KJ, _B_DL):
+    BODIES.update(_b)
+
+# 合并所有补文层（BODIES + EXTRA + EXTRA2 + EXTRA3）为完整正文，段落间以空行分隔；
+# 合并后清空分层字典，使下方 E() 调用只读取已合并的 BODIES。
+for _cid in set(list(BODIES) + list(EXTRA) + list(EXTRA2) + list(EXTRA3)):
+    _parts = [BODIES.get(_cid, ""), EXTRA.get(_cid, ""), EXTRA2.get(_cid, ""), EXTRA3.get(_cid, "")]
+    _full = "\n\n".join(p for p in _parts if p).strip()
+    if _full:
+        BODIES[_cid] = _full
+EXTRA = {}; EXTRA2 = {}; EXTRA3 = {}
+import json as _json
+_OLD = {e["id"]: e["body"] for e in _json.load(open("data/entries.json", encoding="utf-8"))["entries"]}
 
 entries = []
 
+
 def E(id, title, domain, sub, summary, body, classic, art, tags):
-    # 规范化段落分隔：单换行（行尾换段）统一为 \n\n，保证详情页多 <p> 渲染
-    body = re.sub(r"(?<!\n)\n(?!\n)", "\n\n", body)
     entries.append({
         "id": id, "title": title, "domain": domain, "sub": sub,
         "summary": summary, "body": body, "classic": classic,
         "art": art, "tags": tags,
     })
 
-C = lambda lib, i: [{"lib": lib, "id": i}]
-CH = lambda ch, seal=False: {"type": "character", "params": {"char": ch, "seal": seal}}
-OB = lambda kind, label=None: {"type": "object", "params": {"kind": kind, "label": label}}
-ST = lambda term, icon, season: {"type": "solar-term", "params": {"term": term, "icon": icon, "season": season}}
 
-# ============ 思想哲学 (18) ============
-E("sixiang-rujia", "儒家", "思想哲学", "儒家", "以仁为本、以礼为纲，中国人安身立命的底色。",
-"""儒家是中国影响最深远的学派，由春秋末年的孔子（孔丘，前551—前479）开创。孔门弟子辑其言行成《论语》，核心在一“仁”字——“仁者爱人”，又把仁爱落在“礼”的节度里，使人伦日用皆有规矩。孔子晚年删述六经、设帐授徒，打破“学在官府”的垄断，首开私学，被后世尊为“至圣先师”。
+def C(lib, i):
+    return [{"lib": lib, "id": i}]
+
+def CH(ch, seal=False):
+    return {"type": "character", "params": {"char": ch, "seal": seal}}
+
+def OB(kind, label=None):
+    return {"type": "object", "params": {"kind": kind, "label": label}}
+
+def ST(term, icon, season):
+    return {"type": "solar-term", "params": {"term": term, "icon": icon, "season": season}}
+
+
+# ============ 以下为各条目元数据（正文见 bodies.py） ============
+
+E('sixiang-rujia', "儒家", "思想哲学", "儒家", "以仁为本、以礼为纲，中国人安身立命的底色。", ((BODIES.get("sixiang-rujia", "") + EXTRA.get("sixiang-rujia", "") + EXTRA2.get("sixiang-rujia", "")) or _OLD.get("sixiang-rujia", "")), [{'lib': '论语', 'id': 'lunyu-20'}], {'type': 'character', 'params': {'char': '仁', 'seal': False}}, ['儒家', '论语', '历史', '闯关'])
+E('sixiang-daojia', "道家与道教", "思想哲学", "道家·道教", "道法自然、清静无为，另一条安顿生命的路。", ((BODIES.get("sixiang-daojia", "") + EXTRA.get("sixiang-daojia", "") + EXTRA2.get("sixiang-daojia", "")) or _OLD.get("sixiang-daojia", "")), [{'lib': '道德经', 'id': 'ddj-25'}], {'type': 'character', 'params': {'char': '道', 'seal': False}}, ['道家', '道教', '历史'])
+E('sixiang-fojia', "中国佛教", "思想哲学", "佛家", "自西徂东，落地生根，化为中国思想的一脉。", ((BODIES.get("sixiang-fojia", "") + EXTRA.get("sixiang-fojia", "") + EXTRA2.get("sixiang-fojia", "")) or _OLD.get("sixiang-fojia", "")), [{'lib': '六祖坛经', 'id': 'zc-1'}], {'type': 'character', 'params': {'char': '佛', 'seal': False}}, ['佛家', '历史', '闯关'])
+E('classic-lunyu', "《论语》", "思想哲学", "经典原文", "半部可治天下，一句足醒平生。", ((BODIES.get("classic-lunyu", "") + EXTRA.get("classic-lunyu", "") + EXTRA2.get("classic-lunyu", "")) or _OLD.get("classic-lunyu", "")), [{'lib': '论语', 'id': 'lunyu-16'}], {'type': 'character', 'params': {'char': '论', 'seal': False}}, ['论语', '经典', '历史'])
+E('sixiang-zhongyong', "中庸", "思想哲学", "儒家", "不偏不倚，无过无不及，中国人的尺度智慧。", ((BODIES.get("sixiang-zhongyong", "") + EXTRA.get("sixiang-zhongyong", "") + EXTRA2.get("sixiang-zhongyong", "")) or _OLD.get("sixiang-zhongyong", "")), [{'lib': '中庸', 'id': 'zy-1'}], {'type': 'character', 'params': {'char': '中', 'seal': False}}, ['儒家', '经典', '历史'])
+E('sixiang-mengzi', "孟子", "思想哲学", "儒家", "养浩然之气，倡仁政民本，儒家“亚圣”。", ((BODIES.get("sixiang-mengzi", "") + EXTRA.get("sixiang-mengzi", "") + EXTRA2.get("sixiang-mengzi", "")) or _OLD.get("sixiang-mengzi", "")), [{'lib': '孟子', 'id': 'mengzi-1'}], {'type': 'character', 'params': {'char': '孟', 'seal': False}}, ['儒家', '孟子', '历史'])
+E('sixiang-zhuangzi', "庄子", "思想哲学", "道家·道教", "逍遥于物外，齐物于心中，道家的诗意极境。", ((BODIES.get("sixiang-zhuangzi", "") + EXTRA.get("sixiang-zhuangzi", "") + EXTRA2.get("sixiang-zhuangzi", "")) or _OLD.get("sixiang-zhuangzi", "")), [{'lib': '庄子', 'id': 'zhuangzi-2'}], {'type': 'character', 'params': {'char': '庄', 'seal': False}}, ['道家', '庄子', '历史'])
+E('classic-daodejing', "《道德经》", "思想哲学", "经典原文", "五千言，藏天下至理；一个“道”，说尽玄机。", ((BODIES.get("classic-daodejing", "") + EXTRA.get("classic-daodejing", "") + EXTRA2.get("classic-daodejing", "")) or _OLD.get("classic-daodejing", "")), [{'lib': '道德经', 'id': 'ddj-8'}], {'type': 'character', 'params': {'char': '德', 'seal': False}}, ['道家', '经典', '历史'])
+E('classic-daxue', "《大学》", "思想哲学", "经典原文", "三纲八目，修齐治平，儒者的路线图。", ((BODIES.get("classic-daxue", "") + EXTRA.get("classic-daxue", "") + EXTRA2.get("classic-daxue", "")) or _OLD.get("classic-daxue", "")), [{'lib': '四书章句', 'id': 'sishu-1'}], {'type': 'character', 'params': {'char': '学', 'seal': False}}, ['儒家', '经典', '历史'])
+E('sixiang-yinyang', "阴阳五行", "思想哲学", "通识", "中国人的宇宙语法，万事万物的说明书。", ((BODIES.get("sixiang-yinyang", "") + EXTRA.get("sixiang-yinyang", "") + EXTRA2.get("sixiang-yinyang", "")) or _OLD.get("sixiang-yinyang", "")), [{'lib': '易经', 'id': 'yj-1'}], {'type': 'character', 'params': {'char': '阴', 'seal': False}}, ['阴阳', '五行', '历史'])
+E('sixiang-xunzi', "荀子", "思想哲学", "儒家", "性恶而言善，礼法并施，儒家的另一脉。", ((BODIES.get("sixiang-xunzi", "") + EXTRA.get("sixiang-xunzi", "") + EXTRA2.get("sixiang-xunzi", "")) or _OLD.get("sixiang-xunzi", "")), [{'lib': '荀子', 'id': 'xunzi-1'}], {'type': 'character', 'params': {'char': '荀', 'seal': False}}, ['儒家', '荀子', '历史'])
+E('sixiang-mojia', "墨家", "思想哲学", "墨家", "兼爱非攻、尚贤节用，平民的侠义理想。", ((BODIES.get("sixiang-mojia", "") + EXTRA.get("sixiang-mojia", "") + EXTRA2.get("sixiang-mojia", "")) or _OLD.get("sixiang-mojia", "")), [{'lib': '墨子', 'id': 'mozi-1'}], {'type': 'character', 'params': {'char': '墨', 'seal': False}}, ['墨家', '历史'])
+E('sixiang-fajia', "法家", "思想哲学", "法家", "不别亲疏、不殊贵贱，一断于法。", ((BODIES.get("sixiang-fajia", "") + EXTRA.get("sixiang-fajia", "") + EXTRA2.get("sixiang-fajia", "")) or _OLD.get("sixiang-fajia", "")), [{'lib': '韩非子', 'id': 'hz-2'}], {'type': 'character', 'params': {'char': '法', 'seal': False}}, ['法家', '历史'])
+E('sixiang-lizhu', "程朱理学", "思想哲学", "理学", "存天理、穷义理，儒家的哲学化高峰。", ((BODIES.get("sixiang-lizhu", "") + EXTRA.get("sixiang-lizhu", "") + EXTRA2.get("sixiang-lizhu", "")) or _OLD.get("sixiang-lizhu", "")), [{'lib': '中庸', 'id': 'zy-3'}], {'type': 'character', 'params': {'char': '理', 'seal': False}}, ['理学', '儒家', '历史'])
+E('sixiang-xinxue', "陆王心学", "思想哲学", "心学", "心即理、知行合一，一盏向内点亮的光。", ((BODIES.get("sixiang-xinxue", "") + EXTRA.get("sixiang-xinxue", "") + EXTRA2.get("sixiang-xinxue", "")) or _OLD.get("sixiang-xinxue", "")), [{'lib': '传习录', 'id': 'czl-1'}], {'type': 'character', 'params': {'char': '心', 'seal': False}}, ['心学', '儒家', '历史'])
+E('sixiang-xuanxue', "魏晋玄学", "思想哲学", "玄学", "辨名析理、越名任心，乱世里的清谈与风流。", ((BODIES.get("sixiang-xuanxue", "") + EXTRA.get("sixiang-xuanxue", "") + EXTRA2.get("sixiang-xuanxue", "")) or _OLD.get("sixiang-xuanxue", "")), [{'lib': '易经', 'id': 'yj-3'}], {'type': 'character', 'params': {'char': '玄', 'seal': False}}, ['玄学', '道家', '历史'])
+E('sixiang-dongzhongshu', "董仲舒与独尊儒术", "思想哲学", "儒家", "罢黜百家、独尊儒术，儒家登上正统之位。", ((BODIES.get("sixiang-dongzhongshu", "") + EXTRA.get("sixiang-dongzhongshu", "") + EXTRA2.get("sixiang-dongzhongshu", "")) or _OLD.get("sixiang-dongzhongshu", "")), [{'lib': '春秋繁露', 'id': 'czfl-1'}], {'type': 'character', 'params': {'char': '董', 'seal': False}}, ['儒家', '汉', '历史'])
+E('sixiang-yijing', "易学与象数", "思想哲学", "通识", "群经之首，穷理尽性，开物成务。", ((BODIES.get("sixiang-yijing", "") + EXTRA.get("sixiang-yijing", "") + EXTRA2.get("sixiang-yijing", "")) or _OLD.get("sixiang-yijing", "")), [{'lib': '易经', 'id': 'yj-2'}], {'type': 'character', 'params': {'char': '易', 'seal': False}}, ['易经', '阴阳', '历史'])
+E('lishi-qin', "秦：中央集权之始", "历史脉络", "朝代变迁", "三公九卿、郡县天下，两千年帝制的模板。", ((BODIES.get("lishi-qin", "") + EXTRA.get("lishi-qin", "") + EXTRA2.get("lishi-qin", "")) or _OLD.get("lishi-qin", "")), [{'lib': '韩非子', 'id': 'hz-1'}], {'type': 'character', 'params': {'char': '秦', 'seal': False}}, ['历史', '朝代', '秦', '官制'])
+E('lishi-han', "汉：大一统的定型", "历史脉络", "朝代变迁", "郡国并行到独尊儒术，奠定华夏筋骨。", ((BODIES.get("lishi-han", "") + EXTRA.get("lishi-han", "") + EXTRA2.get("lishi-han", "")) or _OLD.get("lishi-han", "")), [{'lib': '史记', 'id': 'shiji-1'}], {'type': 'character', 'params': {'char': '汉', 'seal': False}}, ['历史', '朝代', '汉'])
+E('lishi-tang', "唐：盛世与开放", "历史脉络", "朝代变迁", "三省六部、科举仕进，长安城里的世界中心。", ((BODIES.get("lishi-tang", "") + EXTRA.get("lishi-tang", "") + EXTRA2.get("lishi-tang", "")) or _OLD.get("lishi-tang", "")), [{'lib': '资治通鉴', 'id': 'zztj-1'}], {'type': 'character', 'params': {'char': '唐', 'seal': False}}, ['历史', '朝代', '唐'])
+E('lishi-song', "宋：文人政治与近世", "历史脉络", "朝代变迁", "重文轻武、科举鼎盛，中国的“文艺复兴”。", ((BODIES.get("lishi-song", "") + EXTRA.get("lishi-song", "") + EXTRA2.get("lishi-song", "")) or _OLD.get("lishi-song", "")), [{'lib': '资治通鉴', 'id': 'zztj-2'}], {'type': 'character', 'params': {'char': '宋', 'seal': False}}, ['历史', '朝代', '宋'])
+E('lishi-yuan', "元：行省与一统", "历史脉络", "朝代变迁", "草原入主，行省建制，版图空前辽阔。", ((BODIES.get("lishi-yuan", "") + EXTRA.get("lishi-yuan", "") + EXTRA2.get("lishi-yuan", "")) or _OLD.get("lishi-yuan", "")), [{'lib': '易经', 'id': 'yj-3'}], {'type': 'character', 'params': {'char': '元', 'seal': False}}, ['历史', '朝代', '元'])
+E('lishi-ming', "明：内阁与专制顶峰", "历史脉络", "朝代变迁", "废丞相、设内阁，皇权直抵云霄。", ((BODIES.get("lishi-ming", "") + EXTRA.get("lishi-ming", "") + EXTRA2.get("lishi-ming", "")) or _OLD.get("lishi-ming", "")), [{'lib': '传习录', 'id': 'czl-1'}], {'type': 'character', 'params': {'char': '明', 'seal': False}}, ['历史', '朝代', '明'])
+E('lishi-qing', "清：军机处与末世", "历史脉络", "朝代变迁", "满汉共治、军机揽权，帝制的回光与落幕。", ((BODIES.get("lishi-qing", "") + EXTRA.get("lishi-qing", "") + EXTRA2.get("lishi-qing", "")) or _OLD.get("lishi-qing", "")), [{'lib': '资治通鉴', 'id': 'zztj-1'}], {'type': 'character', 'params': {'char': '清', 'seal': False}}, ['历史', '朝代', '清'])
+E('lishi-sansheng', "三省六部制", "历史脉络", "典章制度", "中书出令、门下封驳、尚书执行，最早的权力制衡。", ((BODIES.get("lishi-sansheng", "") + EXTRA.get("lishi-sansheng", "") + EXTRA2.get("lishi-sansheng", "")) or _OLD.get("lishi-sansheng", "")), [{'lib': '周礼', 'id': 'zl-1'}], {'type': 'character', 'params': {'char': '官', 'seal': False}}, ['历史', '朝代', '官制'])
+E('lishi-keju', "科举制", "历史脉络", "典章制度", "打破门第、以文取士，古代最重大的制度发明。", ((BODIES.get("lishi-keju", "") + EXTRA.get("lishi-keju", "") + EXTRA2.get("lishi-keju", "")) or _OLD.get("lishi-keju", "")), [{'lib': '荀子', 'id': 'xunzi-2'}], {'type': 'character', 'params': {'char': '举', 'seal': False}}, ['历史', '朝代', '科举'])
+E('lishi-jiancha', "监察与谏官", "历史脉络", "典章制度", "御史纠弹、谏官封驳，皇权的自我纠错机制。", ((BODIES.get("lishi-jiancha", "") + EXTRA.get("lishi-jiancha", "") + EXTRA2.get("lishi-jiancha", "")) or _OLD.get("lishi-jiancha", "")), [{'lib': '周礼', 'id': 'zl-1'}], {'type': 'character', 'params': {'char': '察', 'seal': False}}, ['历史', '朝代', '官制'])
+E('lishi-fenjun', "分封与郡县", "历史脉络", "典章制度", "封建与郡县之争，贯穿两千年的一条暗线。", ((BODIES.get("lishi-fenjun", "") + EXTRA.get("lishi-fenjun", "") + EXTRA2.get("lishi-fenjun", "")) or _OLD.get("lishi-fenjun", "")), [{'lib': '史记', 'id': 'shiji-2'}], {'type': 'character', 'params': {'char': '封', 'seal': False}}, ['历史', '朝代', '官制'])
+E('lishi-zaixiang', "宰相制度演变", "历史脉络", "典章制度", "从三公到内阁，一个职位的两千年退场。", ((BODIES.get("lishi-zaixiang", "") + EXTRA.get("lishi-zaixiang", "") + EXTRA2.get("lishi-zaixiang", "")) or _OLD.get("lishi-zaixiang", "")), [{'lib': '韩非子', 'id': 'hz-1'}], {'type': 'character', 'params': {'char': '相', 'seal': False}}, ['历史', '朝代', '官制'])
+E('lishi-ganzhi', "干支与历法", "历史脉络", "典章制度", "十天干十二地支，中国人的时间密码。", ((BODIES.get("lishi-ganzhi", "") + EXTRA.get("lishi-ganzhi", "") + EXTRA2.get("lishi-ganzhi", "")) or _OLD.get("lishi-ganzhi", "")), [{'lib': '千字文', 'id': 'qz-2'}], {'type': 'character', 'params': {'char': '历', 'seal': False}}, ['历史', '历法', '节气'])
+E('lishi-sichou', "丝绸之路", "历史脉络", "重大事件", "一条商路，连起欧亚大陆的文明血脉。", ((BODIES.get("lishi-sichou", "") + EXTRA.get("lishi-sichou", "") + EXTRA2.get("lishi-sichou", "")) or _OLD.get("lishi-sichou", "")), [{'lib': '易经', 'id': 'yj-2'}], {'type': 'character', 'params': {'char': '丝', 'seal': False}}, ['历史', '朝代', '丝路'])
+E('lishi-sida', "四大发明", "历史脉络", "重大事件", "造纸印刷火药指南针，改变世界的中国创造。", ((BODIES.get("lishi-sida", "") + EXTRA.get("lishi-sida", "") + EXTRA2.get("lishi-sida", "")) or _OLD.get("lishi-sida", "")), [{'lib': '梦溪笔谈', 'id': 'mxt-1'}], {'type': 'character', 'params': {'char': '器', 'seal': False}}, ['历史', '朝代', '发明'])
+E('lishi-changcheng', "长城", "历史脉络", "重大事件", "蜿蜒万里的边界，也是文明的隐喻。", ((BODIES.get("lishi-changcheng", "") + EXTRA.get("lishi-changcheng", "") + EXTRA2.get("lishi-changcheng", "")) or _OLD.get("lishi-changcheng", "")), None, {'type': 'character', 'params': {'char': '城', 'seal': False}}, ['历史', '朝代', '长城'])
+E('lishi-zhenghe', "郑和下西洋", "历史脉络", "重大事件", "宝船七下西洋，和平交往的蓝色壮举。", ((BODIES.get("lishi-zhenghe", "") + EXTRA.get("lishi-zhenghe", "") + EXTRA2.get("lishi-zhenghe", "")) or _OLD.get("lishi-zhenghe", "")), [{'lib': '楚辞', 'id': 'chuci-01'}], {'type': 'character', 'params': {'char': '航', 'seal': False}}, ['历史', '朝代', '明', '航海'])
+E('lishi-weijin', "魏晋南北朝", "历史脉络", "朝代变迁", "门阀政治、民族融合，乱世里的解体与重生。", ((BODIES.get("lishi-weijin", "") + EXTRA.get("lishi-weijin", "") + EXTRA2.get("lishi-weijin", "")) or _OLD.get("lishi-weijin", "")), [{'lib': '易经', 'id': 'yj-3'}], {'type': 'character', 'params': {'char': '魏', 'seal': False}}, ['历史', '朝代', '魏晋'])
+E('lishi-chunqiu', "春秋战国", "历史脉络", "朝代变迁", "礼崩乐坏、百家争鸣，中华文明的奠基时代。", ((BODIES.get("lishi-chunqiu", "") + EXTRA.get("lishi-chunqiu", "") + EXTRA2.get("lishi-chunqiu", "")) or _OLD.get("lishi-chunqiu", "")), [{'lib': '孟子', 'id': 'mengzi-4'}], {'type': 'character', 'params': {'char': '周', 'seal': False}}, ['历史', '朝代', '春秋'])
+E('classic-shijing', "《诗经》", "汉字·文学", "经典原文", "三百篇，思无邪，中国诗歌的源头。", ((BODIES.get("classic-shijing", "") + EXTRA.get("classic-shijing", "") + EXTRA2.get("classic-shijing", "")) or _OLD.get("classic-shijing", "")), [{'lib': '诗经', 'id': 'shijing-01'}], {'type': 'character', 'params': {'char': '诗', 'seal': False}}, ['诗经', '诗词', '经典'])
+E('wenzi-xiangxing', "象形与汉字", "汉字·文学", "字源流变", "书画同源，一字一世界。", ((BODIES.get("wenzi-xiangxing", "") + EXTRA.get("wenzi-xiangxing", "") + EXTRA2.get("wenzi-xiangxing", "")) or _OLD.get("wenzi-xiangxing", "")), [{'lib': '说文解字', 'id': 'sw-1'}], {'type': 'character', 'params': {'char': '字', 'seal': False}}, ['汉字', '字源', '历史'])
+E('wenzi-liushu', "六书", "汉字·文学", "字源流变", "象形指事会意形声，汉字的六把钥匙。", ((BODIES.get("wenzi-liushu", "") + EXTRA.get("wenzi-liushu", "") + EXTRA2.get("wenzi-liushu", "")) or _OLD.get("wenzi-liushu", "")), [{'lib': '说文解字', 'id': 'sw-1'}], {'type': 'character', 'params': {'char': '书', 'seal': False}}, ['汉字', '字源', '历史'])
+E('mengxue-qianziwen', "《千字文》", "汉字·文学", "蒙学", "千字不重，四字成韵，童蒙第一书。", ((BODIES.get("mengxue-qianziwen", "") + EXTRA.get("mengxue-qianziwen", "") + EXTRA2.get("mengxue-qianziwen", "")) or _OLD.get("mengxue-qianziwen", "")), [{'lib': '千字文', 'id': 'qz-1'}], {'type': 'character', 'params': {'char': '千', 'seal': False}}, ['千字文', '蒙学', '历史'])
+E('mengxue-sanzijing', "《三字经》", "汉字·文学", "蒙学", "三字一句，童蒙须知，最普及的国学启蒙。", ((BODIES.get("mengxue-sanzijing", "") + EXTRA.get("mengxue-sanzijing", "") + EXTRA2.get("mengxue-sanzijing", "")) or _OLD.get("mengxue-sanzijing", "")), [{'lib': '三字经', 'id': 'sze-1'}], {'type': 'character', 'params': {'char': '三', 'seal': False}}, ['三字经', '蒙学', '历史'])
+E('wenxue-tangshi', "唐诗", "汉字·文学", "诗词文赋", "一座不可逾越的诗歌巅峰。", ((BODIES.get("wenxue-tangshi", "") + EXTRA.get("wenxue-tangshi", "") + EXTRA2.get("wenxue-tangshi", "")) or _OLD.get("wenxue-tangshi", "")), [{'lib': '文心雕龙', 'id': 'wxd-2'}], {'type': 'character', 'params': {'char': '诗', 'seal': False}}, ['唐诗', '诗词', '历史'])
+E('wenxue-songci', "宋词", "汉字·文学", "诗词文赋", "长短句里的婉约与豪放。", ((BODIES.get("wenxue-songci", "") + EXTRA.get("wenxue-songci", "") + EXTRA2.get("wenxue-songci", "")) or _OLD.get("wenxue-songci", "")), [{'lib': '诗经', 'id': 'shijing-qin'}], {'type': 'character', 'params': {'char': '词', 'seal': False}}, ['宋词', '诗词', '历史'])
+E('wenxue-chuci', "楚辞", "汉字·文学", "诗词文赋", "一份来自荆楚的浪漫与哀愁。", ((BODIES.get("wenxue-chuci", "") + EXTRA.get("wenxue-chuci", "") + EXTRA2.get("wenxue-chuci", "")) or _OLD.get("wenxue-chuci", "")), [{'lib': '楚辞', 'id': 'chuci-01'}], {'type': 'character', 'params': {'char': '辞', 'seal': False}}, ['楚辞', '诗词', '历史'])
+E('wenxue-yueyanglou', "《岳阳楼记》", "汉字·文学", "古文名篇", "不以物喜，不以己悲，士人的千古襟怀。", ((BODIES.get("wenxue-yueyanglou", "") + EXTRA.get("wenxue-yueyanglou", "") + EXTRA2.get("wenxue-yueyanglou", "")) or _OLD.get("wenxue-yueyanglou", "")), [{'lib': '论语', 'id': 'lunyu-6'}], {'type': 'character', 'params': {'char': '记', 'seal': False}}, ['古文', '历史', '闯关'])
+E('wenxue-chengyu', "成语源流", "汉字·文学", "古文名篇", "四字之间，藏着一部文化简史。", ((BODIES.get("wenxue-chengyu", "") + EXTRA.get("wenxue-chengyu", "") + EXTRA2.get("wenxue-chengyu", "")) or _OLD.get("wenxue-chengyu", "")), [{'lib': '论语', 'id': 'lunyu-12'}], {'type': 'character', 'params': {'char': '成语', 'seal': False}}, ['成语', '历史', '闯关'])
+E('wenxue-shiji', "《史记》", "汉字·文学", "古文名篇", "史家之绝唱，无韵之离骚。", ((BODIES.get("wenxue-shiji", "") + EXTRA.get("wenxue-shiji", "") + EXTRA2.get("wenxue-shiji", "")) or _OLD.get("wenxue-shiji", "")), [{'lib': '史记', 'id': 'shiji-1'}], {'type': 'character', 'params': {'char': '史', 'seal': False}}, ['史记', '历史', '闯关'])
+E('wenwen-wenxindiaolong', "《文心雕龙》", "汉字·文学", "古文名篇", "体大思精，中国第一部文章学巨典。", ((BODIES.get("wenwen-wenxindiaolong", "") + EXTRA.get("wenwen-wenxindiaolong", "") + EXTRA2.get("wenwen-wenxindiaolong", "")) or _OLD.get("wenwen-wenxindiaolong", "")), [{'lib': '文心雕龙', 'id': 'wxd-1'}], {'type': 'character', 'params': {'char': '龙', 'seal': False}}, ['文论', '历史', '闯关'])
+E('wenxue-yuanqu', "元曲", "汉字·文学", "诗词文赋", "市井里的吟唱，俚俗中的锋芒。", ((BODIES.get("wenxue-yuanqu", "") + EXTRA.get("wenxue-yuanqu", "") + EXTRA2.get("wenxue-yuanqu", "")) or _OLD.get("wenxue-yuanqu", "")), [{'lib': '诗经', 'id': 'shijing-caoxu'}], {'type': 'character', 'params': {'char': '曲', 'seal': False}}, ['元曲', '诗词', '历史'])
+E('wenzi-yanbian', "汉字演变", "汉字·文学", "字源流变", "甲金篆隶草楷行，一字千年形变神连。", ((BODIES.get("wenzi-yanbian", "") + EXTRA.get("wenzi-yanbian", "") + EXTRA2.get("wenzi-yanbian", "")) or _OLD.get("wenzi-yanbian", "")), [{'lib': '说文解字', 'id': 'sw-1'}], {'type': 'character', 'params': {'char': '甲', 'seal': False}}, ['汉字', '字源', '历史'])
+E('jieqi-chunfen', "春分", "节俗·时令", "二十四节气", "昼夜均分，寒暑相平，仲春之中。", ((BODIES.get("jieqi-chunfen", "") + EXTRA.get("jieqi-chunfen", "") + EXTRA2.get("jieqi-chunfen", "")) or _OLD.get("jieqi-chunfen", "")), [{'lib': '千字文', 'id': 'qz-2'}], {'type': 'solar-term', 'params': {'term': '春分', 'icon': '🌓', 'season': 'spring'}}, ['节气', '仲春', '物候', '民俗', '养生'])
+E('jieqi-qingming', "清明", "节俗·时令", "传统节日", "气清景明，慎终追远，踏青插柳。", ((BODIES.get("jieqi-qingming", "") + EXTRA.get("jieqi-qingming", "") + EXTRA2.get("jieqi-qingming", "")) or _OLD.get("jieqi-qingming", "")), [{'lib': '论语', 'id': 'lunyu-20'}], {'type': 'solar-term', 'params': {'term': '清明', 'icon': '🌿', 'season': 'spring'}}, ['节日', '祭祀', '踏青', '民俗', '诗词', '历史'])
+E('jieri-duanwu', "端午", "节俗·时令", "传统节日", "龙舟竞渡，角黍寄情，追念屈原。", ((BODIES.get("jieri-duanwu", "") + EXTRA.get("jieri-duanwu", "") + EXTRA2.get("jieri-duanwu", "")) or _OLD.get("jieri-duanwu", "")), [{'lib': '楚辞', 'id': 'chuci-02'}], {'type': 'solar-term', 'params': {'term': '端午', 'icon': '🐉', 'season': 'summer'}}, ['端午', '龙舟', '屈原', '民俗', '成语', '诗词'])
+E('jieri-zhongqiu', "中秋", "节俗·时令", "传统节日", "月圆人圆，赏月尝饼，寄远思乡。", ((BODIES.get("jieri-zhongqiu", "") + EXTRA.get("jieri-zhongqiu", "") + EXTRA2.get("jieri-zhongqiu", "")) or _OLD.get("jieri-zhongqiu", "")), [{'lib': '楚辞', 'id': 'chuci-03'}], {'type': 'solar-term', 'params': {'term': '中秋', 'icon': '🌕', 'season': 'autumn'}}, ['中秋', '团圆', '赏月', '诗词', '民俗'])
+E('jieri-chunjie', "春节", "节俗·时令", "传统节日", "岁首更始，守岁纳福，万象更新。", ((BODIES.get("jieri-chunjie", "") + EXTRA.get("jieri-chunjie", "") + EXTRA2.get("jieri-chunjie", "")) or _OLD.get("jieri-chunjie", "")), [{'lib': '千字文', 'id': 'qz-1'}], {'type': 'solar-term', 'params': {'term': '春节', 'icon': '🧧', 'season': 'winter'}}, ['春节', '守岁', '民俗', '历史'])
+E('ershisi-jieqi', "二十四节气", "节俗·时令", "二十四节气", "仰观天象，俯察物候，时间的诗意刻度。", ((BODIES.get("ershisi-jieqi", "") + EXTRA.get("ershisi-jieqi", "") + EXTRA2.get("ershisi-jieqi", "")) or _OLD.get("ershisi-jieqi", "")), [{'lib': '千字文', 'id': 'qz-2'}], {'type': 'solar-term', 'params': {'term': '节气', 'icon': '🌾', 'season': 'cycle'}}, ['节气', '物候', '农事', '养生'])
+E('jieqi-dongzhi', "冬至", "节俗·时令", "二十四节气", "日短之极，阳气始生，数九的开端。", ((BODIES.get("jieqi-dongzhi", "") + EXTRA.get("jieqi-dongzhi", "") + EXTRA2.get("jieqi-dongzhi", "")) or _OLD.get("jieqi-dongzhi", "")), [{'lib': '千字文', 'id': 'qz-2'}], {'type': 'solar-term', 'params': {'term': '冬至', 'icon': '❄️', 'season': 'winter'}}, ['节气', '数九', '民俗', '养生'])
+E('jieri-qixi', "七夕", "节俗·时令", "传统节日", "星桥鹊驾，乞巧传情，中国人的情人节。", ((BODIES.get("jieri-qixi", "") + EXTRA.get("jieri-qixi", "") + EXTRA2.get("jieri-qixi", "")) or _OLD.get("jieri-qixi", "")), [{'lib': '诗经', 'id': 'shijing-qin'}], {'type': 'solar-term', 'params': {'term': '七夕', 'icon': '💕', 'season': 'summer'}}, ['七夕', '乞巧', '民俗', '诗词'])
+E('jieri-chongyang', "重阳", "节俗·时令", "传统节日", "登高辞青，茱萸菊花，敬老的秋日。", ((BODIES.get("jieri-chongyang", "") + EXTRA.get("jieri-chongyang", "") + EXTRA2.get("jieri-chongyang", "")) or _OLD.get("jieri-chongyang", "")), [{'lib': '楚辞', 'id': 'chuci-03'}], {'type': 'solar-term', 'params': {'term': '重阳', 'icon': '🍂', 'season': 'autumn'}}, ['重阳', '登高', '敬老', '诗词', '民俗'])
+E('jieri-laba', "腊八", "节俗·时令", "民俗风物", "腊尽春回，一碗粥里的年味序曲。", ((BODIES.get("jieri-laba", "") + EXTRA.get("jieri-laba", "") + EXTRA2.get("jieri-laba", "")) or _OLD.get("jieri-laba", "")), [{'lib': '朱子家训', 'id': 'zz-2'}], {'type': 'solar-term', 'params': {'term': '腊八', 'icon': '🥣', 'season': 'winter'}}, ['腊八', '年味', '民俗', '饮食', '养生'])
+E('jieri-zhongyuan', "中元节", "节俗·时令", "传统节日", "慎终追远，七月半的孝亲与慈悲。", ((BODIES.get("jieri-zhongyuan", "") + EXTRA.get("jieri-zhongyuan", "") + EXTRA2.get("jieri-zhongyuan", "")) or _OLD.get("jieri-zhongyuan", "")), [{'lib': '礼记', 'id': 'liji-3'}], {'type': 'solar-term', 'params': {'term': '中元', 'icon': '🪔', 'season': 'autumn'}}, ['中元', '祭祖', '民俗', '孝亲'])
+E('jieri-longtaitou', "龙抬头", "节俗·时令", "二十四节气", "二月二，龙抬头，春耕与剃头的欢喜。", ((BODIES.get("jieri-longtaitou", "") + EXTRA.get("jieri-longtaitou", "") + EXTRA2.get("jieri-longtaitou", "")) or _OLD.get("jieri-longtaitou", "")), [{'lib': '千字文', 'id': 'qz-2'}], {'type': 'solar-term', 'params': {'term': '龙抬头', 'icon': '🐲', 'season': 'spring'}}, ['龙抬头', '春耕', '民俗', '节气'])
+E('yishu-shufa', "书法", "艺术·工艺", "书法", "笔墨的舞蹈，中国人最日常也最极致的艺术。", ((BODIES.get("yishu-shufa", "") + EXTRA.get("yishu-shufa", "") + EXTRA2.get("yishu-shufa", "")) or _OLD.get("yishu-shufa", "")), [{'lib': '说文解字', 'id': 'sw-1'}], {'type': 'character', 'params': {'char': '书', 'seal': False}}, ['书法', '历史', '闯关'])
+E('yishu-shuimo', "国画", "艺术·工艺", "国画", "水墨丹青，留白处皆是天地。", ((BODIES.get("yishu-shuimo", "") + EXTRA.get("yishu-shuimo", "") + EXTRA2.get("yishu-shuimo", "")) or _OLD.get("yishu-shuimo", "")), [{'lib': '文心雕龙', 'id': 'wxd-2'}], {'type': 'character', 'params': {'char': '画', 'seal': False}}, ['国画', '历史', '闯关'])
+E('yishu-jingju', "京剧", "艺术·工艺", "戏曲", "唱念做打，脸谱乾坤，国粹的百味。", ((BODIES.get("yishu-jingju", "") + EXTRA.get("yishu-jingju", "") + EXTRA2.get("yishu-jingju", "")) or _OLD.get("yishu-jingju", "")), [{'lib': '诗经', 'id': 'shijing-01'}], {'type': 'object', 'params': {'kind': 'mask', 'label': '脸谱'}}, ['京剧', '戏曲', '历史', '闯关'])
+E('yishu-qinghua', "青花瓷", "艺术·工艺", "器物建筑", "白地蓝花，一抹东方的幽蓝。", ((BODIES.get("yishu-qinghua", "") + EXTRA.get("yishu-qinghua", "") + EXTRA2.get("yishu-qinghua", "")) or _OLD.get("yishu-qinghua", "")), [{'lib': '易经', 'id': 'yj-4'}], {'type': 'object', 'params': {'kind': 'vase', 'label': '青花'}}, ['青花瓷', '历史', '闯关'])
+E('yishu-guqin', "古琴", "艺术·工艺", "器物建筑", "七弦泠泠，士人精神的知音。", ((BODIES.get("yishu-guqin", "") + EXTRA.get("yishu-guqin", "") + EXTRA2.get("yishu-guqin", "")) or _OLD.get("yishu-guqin", "")), [{'lib': '诗经', 'id': 'shijing-qin'}], {'type': 'character', 'params': {'char': '琴', 'seal': False}}, ['古琴', '历史', '闯关'])
+E('yishu-yunwen', "纹样寓意", "艺术·工艺", "纹样寓意", "图必有意，意必吉祥。", ((BODIES.get("yishu-yunwen", "") + EXTRA.get("yishu-yunwen", "") + EXTRA2.get("yishu-yunwen", "")) or _OLD.get("yishu-yunwen", "")), [{'lib': '易经', 'id': 'yj-4'}], {'type': 'object', 'params': {'kind': 'cloud', 'label': '云纹'}}, ['纹样', '历史', '闯关'])
+E('yishu-yuanlin', "园林", "艺术·工艺", "器物建筑", "虽由人作，宛自天开。", ((BODIES.get("yishu-yuanlin", "") + EXTRA.get("yishu-yuanlin", "") + EXTRA2.get("yishu-yuanlin", "")) or _OLD.get("yishu-yuanlin", "")), [{'lib': '庄子', 'id': 'zhuangzi-2'}], {'type': 'object', 'params': {'kind': 'garden', 'label': '园林'}}, ['园林', '历史', '闯关'])
+E('yishu-sunmao', "榫卯", "艺术·工艺", "器物建筑", "不施一钉，木与木的咬合。", ((BODIES.get("yishu-sunmao", "") + EXTRA.get("yishu-sunmao", "") + EXTRA2.get("yishu-sunmao", "")) or _OLD.get("yishu-sunmao", "")), [{'lib': '周礼', 'id': 'zl-1'}], {'type': 'character', 'params': {'char': '卯', 'seal': False}}, ['榫卯', '历史', '闯关'])
+E('yishu-zhuanke', "篆刻", "艺术·工艺", "书法", "方寸之间，刀笔的金石气。", ((BODIES.get("yishu-zhuanke", "") + EXTRA.get("yishu-zhuanke", "") + EXTRA2.get("yishu-zhuanke", "")) or _OLD.get("yishu-zhuanke", "")), [{'lib': '说文解字', 'id': 'sw-1'}], {'type': 'character', 'params': {'char': '印', 'seal': False}}, ['篆刻', '历史', '闯关'])
+E('yishu-cixiu', "刺绣", "艺术·工艺", "纹样寓意", "针线为笔，丝帛为纸的丹青。", ((BODIES.get("yishu-cixiu", "") + EXTRA.get("yishu-cixiu", "") + EXTRA2.get("yishu-cixiu", "")) or _OLD.get("yishu-cixiu", "")), [{'lib': '楚辞', 'id': 'chuci-03'}], {'type': 'character', 'params': {'char': '绣', 'seal': False}}, ['刺绣', '历史', '闯关'])
+E('yishu-yuqi', "玉器", "艺术·工艺", "器物建筑", "君子比德于玉，温润而坚刚。", ((BODIES.get("yishu-yuqi", "") + EXTRA.get("yishu-yuqi", "") + EXTRA2.get("yishu-yuqi", "")) or _OLD.get("yishu-yuqi", "")), [{'lib': '礼记', 'id': 'liji-4'}], {'type': 'character', 'params': {'char': '玉', 'seal': False}}, ['玉器', '历史', '闯关'])
+E('yishu-qiqi', "漆器", "艺术·工艺", "器物建筑", "千文万华，髹饰之工。", ((BODIES.get("yishu-qiqi", "") + EXTRA.get("yishu-qiqi", "") + EXTRA2.get("yishu-qiqi", "")) or _OLD.get("yishu-qiqi", "")), [{'lib': '诗经', 'id': 'shijing-07'}], {'type': 'character', 'params': {'char': '漆', 'seal': False}}, ['漆器', '历史', '闯关'])
+E('yishu-bingmayong', "兵马俑", "艺术·工艺", "器物建筑", "泥土塑出的帝国军团。", ((BODIES.get("yishu-bingmayong", "") + EXTRA.get("yishu-bingmayong", "") + EXTRA2.get("yishu-bingmayong", "")) or _OLD.get("yishu-bingmayong", "")), [{'lib': '周礼', 'id': 'zl-1'}], {'type': 'character', 'params': {'char': '俑', 'seal': False}}, ['兵马俑', '历史', '闯关'])
+E('liyi-guanli', "冠礼与笄礼", "衣食·礼制", "礼节", "男子二十而冠，女子十五而笄，成年的加冕。", ((BODIES.get("liyi-guanli", "") + EXTRA.get("liyi-guanli", "") + EXTRA2.get("liyi-guanli", "")) or _OLD.get("liyi-guanli", "")), [{'lib': '礼记', 'id': 'liji-1'}], {'type': 'character', 'params': {'char': '冠', 'seal': False}}, ['冠礼', '礼节', '历史'])
+E('liyi-hunli', "婚姻六礼", "衣食·礼制", "礼节", "纳采问名，执子之手，中国人的嫁娶之仪。", ((BODIES.get("liyi-hunli", "") + EXTRA.get("liyi-hunli", "") + EXTRA2.get("liyi-hunli", "")) or _OLD.get("liyi-hunli", "")), [{'lib': '诗经', 'id': 'shijing-qin'}], {'type': 'character', 'params': {'char': '婚', 'seal': False}}, ['婚礼', '礼节', '历史'])
+E('liyi-zuoci', "座次与揖让", "衣食·礼制", "礼节", "席不正不坐，中国人的空间秩序。", ((BODIES.get("liyi-zuoci", "") + EXTRA.get("liyi-zuoci", "") + EXTRA2.get("liyi-zuoci", "")) or _OLD.get("liyi-zuoci", "")), [{'lib': '礼记', 'id': 'liji-2'}], {'type': 'character', 'params': {'char': '礼', 'seal': False}}, ['座次', '礼节', '历史'])
+E('liyi-bihui', "相见与聘礼", "衣食·礼制", "礼节", "币帛为贽，礼尚往来。", ((BODIES.get("liyi-bihui", "") + EXTRA.get("liyi-bihui", "") + EXTRA2.get("liyi-bihui", "")) or _OLD.get("liyi-bihui", "")), [{'lib': '礼记', 'id': 'liji-2'}], {'type': 'character', 'params': {'char': '币', 'seal': False}}, ['礼节', '历史', '闯关'])
+E('jiaxun-zhuzi', "《朱子家训》", "衣食·礼制", "家训门风", "一粥一饭，当思来处不易。", ((BODIES.get("jiaxun-zhuzi", "") + EXTRA.get("jiaxun-zhuzi", "") + EXTRA2.get("jiaxun-zhuzi", "")) or _OLD.get("jiaxun-zhuzi", "")), [{'lib': '朱子家训', 'id': 'zz-2'}], {'type': 'character', 'params': {'char': '训', 'seal': False}}, ['家训', '历史', '闯关'])
+E('mengxue-dizigui', "《弟子规》", "衣食·礼制", "家训门风", "入则孝，出则悌，童蒙的力行规范。", ((BODIES.get("mengxue-dizigui", "") + EXTRA.get("mengxue-dizigui", "") + EXTRA2.get("mengxue-dizigui", "")) or _OLD.get("mengxue-dizigui", "")), [{'lib': '弟子规', 'id': 'dzg-1'}], {'type': 'character', 'params': {'char': '规', 'seal': False}}, ['弟子规', '家训', '历史'])
+E('yinshi-cha', "茶道", "衣食·礼制", "饮食", "一盏清茶，喝的是中国人慢下来的哲学。", ((BODIES.get("yinshi-cha", "") + EXTRA.get("yinshi-cha", "") + EXTRA2.get("yinshi-cha", "")) or _OLD.get("yinshi-cha", "")), [{'lib': '六祖坛经', 'id': 'zc-1'}], {'type': 'object', 'params': {'kind': 'tea', 'label': '茶'}}, ['茶', '饮食', '养生'])
+E('yinshi-caixi', "八大菜系", "衣食·礼制", "饮食", "一方水土，一方滋味。", ((BODIES.get("yinshi-caixi", "") + EXTRA.get("yinshi-caixi", "") + EXTRA2.get("yinshi-caixi", "")) or _OLD.get("yinshi-caixi", "")), [{'lib': '朱子家训', 'id': 'zz-2'}], {'type': 'character', 'params': {'char': '食', 'seal': False}}, ['饮食', '菜系', '养生'])
+E('yinshi-kuaizi', "筷子", "衣食·礼制", "饮食", "一双七寸六分，夹起的是文明。", ((BODIES.get("yinshi-kuaizi", "") + EXTRA.get("yinshi-kuaizi", "") + EXTRA2.get("yinshi-kuaizi", "")) or _OLD.get("yinshi-kuaizi", "")), [{'lib': '朱子家训', 'id': 'zz-2'}], {'type': 'character', 'params': {'char': '箸', 'seal': False}}, ['筷子', '饮食', '养生'])
+E('fushi-hanfu', "汉服", "衣食·礼制", "服饰", "华夏衣冠，不止是衣裳。", ((BODIES.get("fushi-hanfu", "") + EXTRA.get("fushi-hanfu", "") + EXTRA2.get("fushi-hanfu", "")) or _OLD.get("fushi-hanfu", "")), [{'lib': '礼记', 'id': 'liji-2'}], {'type': 'object', 'params': {'kind': 'robe', 'label': '深衣'}}, ['汉服', '服饰', '历史'])
+E('liyi-sangji', "丧祭之礼", "衣食·礼制", "礼节", "慎终追远，民德归厚。", ((BODIES.get("liyi-sangji", "") + EXTRA.get("liyi-sangji", "") + EXTRA2.get("liyi-sangji", "")) or _OLD.get("liyi-sangji", "")), [{'lib': '礼记', 'id': 'liji-1'}], {'type': 'character', 'params': {'char': '祭', 'seal': False}}, ['丧祭', '礼节', '历史'])
+E('fushi-dengji', "服饰等级", "衣食·礼制", "服饰", "衣冠有等，章纹辨尊卑。", ((BODIES.get("fushi-dengji", "") + EXTRA.get("fushi-dengji", "") + EXTRA2.get("fushi-dengji", "")) or _OLD.get("fushi-dengji", "")), [{'lib': '周礼', 'id': 'zl-1'}], {'type': 'character', 'params': {'char': '衣', 'seal': False}}, ['服饰', '等级', '历史'])
+E('liyi-jiali', "朱子家礼", "衣食·礼制", "家训门风", "冠婚丧祭，居家日用之仪。", ((BODIES.get("liyi-jiali", "") + EXTRA.get("liyi-jiali", "") + EXTRA2.get("liyi-jiali", "")) or _OLD.get("liyi-jiali", "")), [{'lib': '朱子家训', 'id': 'zz-1'}], {'type': 'character', 'params': {'char': '家', 'seal': False}}, ['家礼', '家训', '历史', '闯关'])
+E('mingjia', "名家", "思想哲学", "名家", "专攻名实之辩的先秦学派，中国逻辑与语言哲学之先声。", ((BODIES.get("mingjia", "") + EXTRA.get("mingjia", "") + EXTRA2.get("mingjia", "")) or _OLD.get("mingjia", "")), None, {'type': 'character', 'params': {'char': '名', 'seal': False}}, ['名家', '名辩', '逻辑'])
+E('jingxue', "经学", "思想哲学", "儒家", "训解阐发儒家经典的学问，两千年士人的共同底色。", ((BODIES.get("jingxue", "") + EXTRA.get("jingxue", "") + EXTRA2.get("jingxue", "")) or _OLD.get("jingxue", "")), [{'lib': '汉书', 'id': 'hanshu-1'}], {'type': 'character', 'params': {'char': '经', 'seal': False}}, ['经学', '儒家', '历史'])
+E('shixue', "实学", "思想哲学", "儒家", "明清勃兴的经世致用思潮，反对空谈性理。", ((BODIES.get("shixue", "") + EXTRA.get("shixue", "") + EXTRA2.get("shixue", "")) or _OLD.get("shixue", "")), [{'lib': '传习录', 'id': 'czl-1'}], {'type': 'character', 'params': {'char': '实', 'seal': False}}, ['实学', '明清', '经世'])
+E('wenzi-shuowen', "《说文解字》", "汉字·文学", "字源流变", "中国第一部系统分析字形、说解字义的字典。", ((BODIES.get("wenzi-shuowen", "") + EXTRA.get("wenzi-shuowen", "") + EXTRA2.get("wenzi-shuowen", "")) or _OLD.get("wenzi-shuowen", "")), [{'lib': '说文解字', 'id': 'sw-1'}], {'type': 'character', 'params': {'char': '说', 'seal': False}}, ['说文', '字源', '小学'])
+E('hanfu-yuefu', "汉赋与乐府", "汉字·文学", "诗词文赋", "汉代文学的两副面相：庙堂之赋与民间之乐。", ((BODIES.get("hanfu-yuefu", "") + EXTRA.get("hanfu-yuefu", "") + EXTRA2.get("hanfu-yuefu", "")) or _OLD.get("hanfu-yuefu", "")), [{'lib': '楚辞', 'id': 'chuci-01'}], {'type': 'character', 'params': {'char': '赋', 'seal': False}}, ['汉赋', '乐府', '诗词'])
+E('biji', "笔记小说", "汉字·文学", "古文名篇", "古人随笔记闻的杂著，最见性情与世相。", ((BODIES.get("biji", "") + EXTRA.get("biji", "") + EXTRA2.get("biji", "")) or _OLD.get("biji", "")), [{'lib': '文心雕龙', 'id': 'wxd-1'}], {'type': 'character', 'params': {'char': '笔', 'seal': False}}, ['笔记', '小说', '文学'])
+E('duilian', "楹联", "汉字·文学", "诗词文赋", "由骈文律诗对仗发展而来的对称文学。", ((BODIES.get("duilian", "") + EXTRA.get("duilian", "") + EXTRA2.get("duilian", "")) or _OLD.get("duilian", "")), None, {'type': 'character', 'params': {'char': '联', 'seal': False}}, ['对联', '楹联', '文学'])
+E('jieri-shangsi', "上巳节", "节俗·时令", "传统节日", "农历三月初三的水边祓禊与春游之日。", ((BODIES.get("jieri-shangsi", "") + EXTRA.get("jieri-shangsi", "") + EXTRA2.get("jieri-shangsi", "")) or _OLD.get("jieri-shangsi", "")), None, {'type': 'solar-term', 'params': {'term': '上巳', 'icon': '🌸', 'season': 'spring'}}, ['上巳', '节日', '民俗'])
+E('jieri-sheri', "社日", "节俗·时令", "民俗风物", "祭祀土地神的春祈秋报之节。", ((BODIES.get("jieri-sheri", "") + EXTRA.get("jieri-sheri", "") + EXTRA2.get("jieri-sheri", "")) or _OLD.get("jieri-sheri", "")), [{'lib': '礼记', 'id': 'liji-1'}], {'type': 'character', 'params': {'char': '社', 'seal': False}}, ['社日', '农耕', '民俗'])
+E('jieqi-lichun', "立春", "节俗·时令", "二十四节气", "二十四节气之首，一岁农事之起点。", ((BODIES.get("jieqi-lichun", "") + EXTRA.get("jieqi-lichun", "") + EXTRA2.get("jieqi-lichun", "")) or _OLD.get("jieqi-lichun", "")), None, {'type': 'solar-term', 'params': {'term': '立春', 'icon': '🌱', 'season': 'spring'}}, ['立春', '节气', '民俗'])
+E('lishi-xiashangzhou', "夏商周三代", "历史脉络", "朝代变迁", "中国王朝时代的开端，礼乐文明之奠基。", ((BODIES.get("lishi-xiashangzhou", "") + EXTRA.get("lishi-xiashangzhou", "") + EXTRA2.get("lishi-xiashangzhou", "")) or _OLD.get("lishi-xiashangzhou", "")), [{'lib': '禹贡', 'id': 'yg-1'}], {'type': 'character', 'params': {'char': '夏', 'seal': False}}, ['三代', '青铜', '历史'])
+E('lishi-nanbeichao', "南北朝", "历史脉络", "朝代变迁", "三百年的南北分裂与民族大融合。", ((BODIES.get("lishi-nanbeichao", "") + EXTRA.get("lishi-nanbeichao", "") + EXTRA2.get("lishi-nanbeichao", "")) or _OLD.get("lishi-nanbeichao", "")), [{'lib': '资治通鉴', 'id': 'zztj-1'}], {'type': 'character', 'params': {'char': '南', 'seal': False}}, ['南北朝', '分裂', '历史'])
+E('lishi-wudai', "五代十国", "历史脉络", "朝代变迁", "唐亡后五十余年的中原易代与藩镇之祸。", ((BODIES.get("lishi-wudai", "") + EXTRA.get("lishi-wudai", "") + EXTRA2.get("lishi-wudai", "")) or _OLD.get("lishi-wudai", "")), None, {'type': 'character', 'params': {'char': '五', 'seal': False}}, ['五代', '分裂', '历史'])
+E('lishi-liaojinxixia', "辽金西夏", "历史脉络", "民族", "两宋并立的北方三朝，多政权共存之局。", ((BODIES.get("lishi-liaojinxixia", "") + EXTRA.get("lishi-liaojinxixia", "") + EXTRA2.get("lishi-liaojinxixia", "")) or _OLD.get("lishi-liaojinxixia", "")), None, {'type': 'character', 'params': {'char': '辽', 'seal': False}}, ['辽金', '民族', '历史'])
+E('yishu-dunhuang', "敦煌石窟", "艺术·工艺", "器物建筑", "丝绸之路上的佛教艺术宝库。", ((BODIES.get("yishu-dunhuang", "") + EXTRA.get("yishu-dunhuang", "") + EXTRA2.get("yishu-dunhuang", "")) or _OLD.get("yishu-dunhuang", "")), None, {'type': 'character', 'params': {'char': '窟', 'seal': False}}, ['敦煌', '石窟', '佛教'])
+E('yishu-qingtong', "青铜器", "艺术·工艺", "器物建筑", "商周礼器与兵器，权力与礼制的物质化身。", ((BODIES.get("yishu-qingtong", "") + EXTRA.get("yishu-qingtong", "") + EXTRA2.get("yishu-qingtong", "")) or _OLD.get("yishu-qingtong", "")), [{'lib': '周礼', 'id': 'zl-1'}], {'type': 'character', 'params': {'char': '鼎', 'seal': False}}, ['青铜', '礼器', '工艺'])
+E('yishu-tangsancai', "唐三彩", "艺术·工艺", "器物建筑", "唐代低温釉陶，盛唐气象的釉上投影。", ((BODIES.get("yishu-tangsancai", "") + EXTRA.get("yishu-tangsancai", "") + EXTRA2.get("yishu-tangsancai", "")) or _OLD.get("yishu-tangsancai", "")), None, {'type': 'character', 'params': {'char': '彩', 'seal': False}}, ['唐三彩', '陶艺', '工艺'])
+E('yishu-wenfang', "文房四宝", "艺术·工艺", "器物建筑", "笔墨纸砚，文人书写的器物与审美。", ((BODIES.get("yishu-wenfang", "") + EXTRA.get("yishu-wenfang", "") + EXTRA2.get("yishu-wenfang", "")) or _OLD.get("yishu-wenfang", "")), [{'lib': '文心雕龙', 'id': 'wxd-1'}], {'type': 'character', 'params': {'char': '墨', 'seal': False}}, ['文房', '笔墨', '工艺'])
+E('minju-sihayuan', "中华民居", "衣食·礼制", "服饰", "因地理气候与家族制度而异的居住智慧。", ((BODIES.get("minju-sihayuan", "") + EXTRA.get("minju-sihayuan", "") + EXTRA2.get("minju-sihayuan", "")) or _OLD.get("minju-sihayuan", "")), [{'lib': '周礼', 'id': 'zl-1'}], {'type': 'character', 'params': {'char': '居', 'seal': False}}, ['民居', '建筑', '礼制'])
+E('liyi-yanxiang', "宴飨之礼", "衣食·礼制", "礼节", "以饮食通伦理的古礼。", ((BODIES.get("liyi-yanxiang", "") + EXTRA.get("liyi-yanxiang", "") + EXTRA2.get("liyi-yanxiang", "")) or _OLD.get("liyi-yanxiang", "")), [{'lib': '礼记', 'id': 'liji-1'}], {'type': 'character', 'params': {'char': '宴', 'seal': False}}, ['宴飨', '礼节', '饮食'])
+E('yi-huangdi', "《黄帝内经》", "医药·养生", "中医源流", "中国最早的医学典籍，中医理论的骨架。", ((BODIES.get("yi-huangdi", "") + EXTRA.get("yi-huangdi", "") + EXTRA2.get("yi-huangdi", "")) or _OLD.get("yi-huangdi", "")), [{'lib': '黄帝内经', 'id': 'nh-1'}], {'type': 'character', 'params': {'char': '医', 'seal': False}}, ['黄帝内经', '中医', '经典'])
+E('yi-jichu', "中医基础", "医药·养生", "中医源流", "阴阳五行、藏象气血：中医看人的底层逻辑。", ((BODIES.get("yi-jichu", "") + EXTRA.get("yi-jichu", "") + EXTRA2.get("yi-jichu", "")) or _OLD.get("yi-jichu", "")), [{'lib': '黄帝内经', 'id': 'nh-2'}], {'type': 'character', 'params': {'char': '阴', 'seal': False}}, ['阴阳', '藏象', '中医'])
+E('yi-shanghan', "伤寒论与张仲景", "医药·养生", "中医源流", "辨证论治的范式，方书之祖。", ((BODIES.get("yi-shanghan", "") + EXTRA.get("yi-shanghan", "") + EXTRA2.get("yi-shanghan", "")) or _OLD.get("yi-shanghan", "")), [{'lib': '伤寒论', 'id': 'shl-1'}], {'type': 'character', 'params': {'char': '寒', 'seal': False}}, ['伤寒论', '张仲景', '医典'])
+E('yi-bencao', "本草纲目与李时珍", "医药·养生", "本草方药", "集大成的药物学巨著，古代百科全书。", ((BODIES.get("yi-bencao", "") + EXTRA.get("yi-bencao", "") + EXTRA2.get("yi-bencao", "")) or _OLD.get("yi-bencao", "")), [{'lib': '本草纲目', 'id': 'bc-1'}], {'type': 'character', 'params': {'char': '草', 'seal': False}}, ['本草纲目', '李时珍', '本草'])
+E('yi-zhenjiu', "针灸", "医药·养生", "针灸导引", "针与灸的外治法，中医最具标志性的技艺。", ((BODIES.get("yi-zhenjiu", "") + EXTRA.get("yi-zhenjiu", "") + EXTRA2.get("yi-zhenjiu", "")) or _OLD.get("yi-zhenjiu", "")), None, {'type': 'character', 'params': {'char': '针', 'seal': False}}, ['针灸', '经络', '中医'])
+E('yi-jingluo', "经络气血", "医药·养生", "针灸导引", "古人对身体联络系统的关系性建模。", ((BODIES.get("yi-jingluo", "") + EXTRA.get("yi-jingluo", "") + EXTRA2.get("yi-jingluo", "")) or _OLD.get("yi-jingluo", "")), None, {'type': 'character', 'params': {'char': '络', 'seal': False}}, ['经络', '气血', '中医'])
+E('yi-qianjin', "千金方与孙思邈", "医药·养生", "中医源流", "集唐以前医方之大成，药王孙思邈。", ((BODIES.get("yi-qianjin", "") + EXTRA.get("yi-qianjin", "") + EXTRA2.get("yi-qianjin", "")) or _OLD.get("yi-qianjin", "")), [{'lib': '千金方', 'id': 'qj-1'}], {'type': 'character', 'params': {'char': '仁', 'seal': False}}, ['千金方', '孙思邈', '医德'])
+E('yi-wenbing', "温病学派", "医药·养生", "中医源流", "明清成熟的温热疫邪诊治体系。", ((BODIES.get("yi-wenbing", "") + EXTRA.get("yi-wenbing", "") + EXTRA2.get("yi-wenbing", "")) or _OLD.get("yi-wenbing", "")), None, {'type': 'character', 'params': {'char': '瘟', 'seal': False}}, ['温病', '瘟疫', '中医'])
+E('yi-daoyin', "导引·五禽戏·八段锦", "医药·养生", "针灸导引", "导气引体的传统养生术。", ((BODIES.get("yi-daoyin", "") + EXTRA.get("yi-daoyin", "") + EXTRA2.get("yi-daoyin", "")) or _OLD.get("yi-daoyin", "")), None, {'type': 'character', 'params': {'char': '导', 'seal': False}}, ['导引', '养生', '功法'])
+E('yi-siyang', "四时养生", "医药·养生", "养生观念", "春生夏长秋收冬藏，顺天应时。", ((BODIES.get("yi-siyang", "") + EXTRA.get("yi-siyang", "") + EXTRA2.get("yi-siyang", "")) or _OLD.get("yi-siyang", "")), [{'lib': '黄帝内经', 'id': 'nh-3'}], {'type': 'character', 'params': {'char': '养', 'seal': False}}, ['养生', '四时', '顺应'])
+E('yi-shiliao', "食疗", "医药·养生", "养生观念", "药食同源，以膳食调养身体。", ((BODIES.get("yi-shiliao", "") + EXTRA.get("yi-shiliao", "") + EXTRA2.get("yi-shiliao", "")) or _OLD.get("yi-shiliao", "")), None, {'type': 'character', 'params': {'char': '食', 'seal': False}}, ['食疗', '食养', '养生'])
+E('yi-fangyi', "中医防疫", "医药·养生", "养生观念", "正气存内，邪不可干的传统智慧。", ((BODIES.get("yi-fangyi", "") + EXTRA.get("yi-fangyi", "") + EXTRA2.get("yi-fangyi", "")) or _OLD.get("yi-fangyi", "")), None, {'type': 'character', 'params': {'char': '疫', 'seal': False}}, ['防疫', '瘟疫', '中医'])
+E('yi-bencao-yaoxing', "本草药性", "医药·养生", "本草方药", "四气五味归经，用药的底层逻辑。", ((BODIES.get("yi-bencao-yaoxing", "") + EXTRA.get("yi-bencao-yaoxing", "") + EXTRA2.get("yi-bencao-yaoxing", "")) or _OLD.get("yi-bencao-yaoxing", "")), [{'lib': '本草纲目', 'id': 'bc-2'}], {'type': 'character', 'params': {'char': '药', 'seal': False}}, ['药性', '本草', '中医'])
+E('yi-dayi', "大医精诚", "医药·养生", "中医源流", "孙思邈立下的医德准绳。", ((BODIES.get("yi-dayi", "") + EXTRA.get("yi-dayi", "") + EXTRA2.get("yi-dayi", "")) or _OLD.get("yi-dayi", "")), [{'lib': '千金方', 'id': 'qj-1'}], {'type': 'character', 'params': {'char': '德', 'seal': False}}, ['医德', '大医精诚', '医道'])
+E('keji-sida', "四大发明", "科技·发明", "四大发明", "造纸印刷火药指南针，改变世界的中国技术。", ((BODIES.get("keji-sida", "") + EXTRA.get("keji-sida", "") + EXTRA2.get("keji-sida", "")) or _OLD.get("keji-sida", "")), [{'lib': '梦溪笔谈', 'id': 'mxt-1'}], {'type': 'character', 'params': {'char': '器', 'seal': False}}, ['四大发明', '科技', '闯关'])
+E('keji-zaozhi', "造纸术", "科技·发明", "四大发明", "蔡伦改进的造纸术，知识传播的基础设施革命。", ((BODIES.get("keji-zaozhi", "") + EXTRA.get("keji-zaozhi", "") + EXTRA2.get("keji-zaozhi", "")) or _OLD.get("keji-zaozhi", "")), None, {'type': 'character', 'params': {'char': '纸', 'seal': False}}, ['造纸', '蔡伦', '发明'])
+E('keji-yinshua', "印刷术", "科技·发明", "四大发明", "雕版到活字，毕昇早于古腾堡约四百年。", ((BODIES.get("keji-yinshua", "") + EXTRA.get("keji-yinshua", "") + EXTRA2.get("keji-yinshua", "")) or _OLD.get("keji-yinshua", "")), [{'lib': '梦溪笔谈', 'id': 'mxt-1'}], {'type': 'character', 'params': {'char': '印', 'seal': False}}, ['印刷', '活字', '发明'])
+E('keji-huoyao', "火药", "科技·发明", "四大发明", "源于炼丹，改变战争形态的中国发明。", ((BODIES.get("keji-huoyao", "") + EXTRA.get("keji-huoyao", "") + EXTRA2.get("keji-huoyao", "")) or _OLD.get("keji-huoyao", "")), None, {'type': 'character', 'params': {'char': '火', 'seal': False}}, ['火药', '炼丹', '发明'])
+E('keji-zhinan', "指南针", "科技·发明", "四大发明", "从司南到航海罗盘，大航海的技术支点。", ((BODIES.get("keji-zhinan", "") + EXTRA.get("keji-zhinan", "") + EXTRA2.get("keji-zhinan", "")) or _OLD.get("keji-zhinan", "")), [{'lib': '梦溪笔谈', 'id': 'mxt-1'}], {'type': 'object', 'params': {'kind': 'compass', 'label': None}}, ['指南针', '司南', '航海'])
+E('keji-tianwen', "天文历法", "科技·发明", "天文历法", "观象授时，把星空变成农耕文明的时钟。", ((BODIES.get("keji-tianwen", "") + EXTRA.get("keji-tianwen", "") + EXTRA2.get("keji-tianwen", "")) or _OLD.get("keji-tianwen", "")), [{'lib': '易经', 'id': 'yj-4'}], {'type': 'character', 'params': {'char': '天', 'seal': False}}, ['天文', '历法', '科技'])
+E('keji-zhangheng', "张衡与仪器", "科技·发明", "天文历法", "浑天仪与地动仪，古代科学家的范本。", ((BODIES.get("keji-zhangheng", "") + EXTRA.get("keji-zhangheng", "") + EXTRA2.get("keji-zhangheng", "")) or _OLD.get("keji-zhangheng", "")), None, {'type': 'character', 'params': {'char': '仪', 'seal': False}}, ['张衡', '地动仪', '天文'])
+E('keji-nongxue', "农学（齐民要术）", "科技·发明", "工农营造", "以农立国的技术体系，顺天量地。", ((BODIES.get("keji-nongxue", "") + EXTRA.get("keji-nongxue", "") + EXTRA2.get("keji-nongxue", "")) or _OLD.get("keji-nongxue", "")), [{'lib': '齐民要术', 'id': 'qm-1'}], {'type': 'character', 'params': {'char': '农', 'seal': False}}, ['农学', '贾思勰', '科技'])
+E('keji-shuxue', "数学（祖冲之）", "科技·发明", "天文历法", "问题驱动的中国算法传统。", ((BODIES.get("keji-shuxue", "") + EXTRA.get("keji-shuxue", "") + EXTRA2.get("keji-shuxue", "")) or _OLD.get("keji-shuxue", "")), None, {'type': 'character', 'params': {'char': '数', 'seal': False}}, ['数学', '祖冲之', '科技'])
+E('keji-shuili', "水利（都江堰）", "科技·发明", "水利交通", "因势利导的生态水利范本。", ((BODIES.get("keji-shuili", "") + EXTRA.get("keji-shuili", "") + EXTRA2.get("keji-shuili", "")) or _OLD.get("keji-shuili", "")), None, {'type': 'character', 'params': {'char': '水', 'seal': False}}, ['水利', '都江堰', '工程'])
+E('keji-yejin', "冶金铸造", "科技·发明", "工农营造", "从青铜范铸到钢铁冶炼的文明筋骨。", ((BODIES.get("keji-yejin", "") + EXTRA.get("keji-yejin", "") + EXTRA2.get("keji-yejin", "")) or _OLD.get("keji-yejin", "")), [{'lib': '天工开物', 'id': 'tg-2'}], {'type': 'character', 'params': {'char': '金', 'seal': False}}, ['冶金', '青铜', '科技'])
+E('keji-zaochuan', "造船与航海", "科技·发明", "水利交通", "水密隔舱与罗盘撑起的远洋时代。", ((BODIES.get("keji-zaochuan", "") + EXTRA.get("keji-zaochuan", "") + EXTRA2.get("keji-zaochuan", "")) or _OLD.get("keji-zaochuan", "")), None, {'type': 'character', 'params': {'char': '舟', 'seal': False}}, ['造船', '航海', '科技'])
+E('keji-yingzao', "建筑科技（营造法式）", "科技·发明", "工农营造", "以材为模数的官方建筑规范。", ((BODIES.get("keji-yingzao", "") + EXTRA.get("keji-yingzao", "") + EXTRA2.get("keji-yingzao", "")) or _OLD.get("keji-yingzao", "")), [{'lib': '营造法式', 'id': 'yz-1'}], {'type': 'character', 'params': {'char': '营', 'seal': False}}, ['建筑', '营造法式', '科技'])
+E('keji-fangzhi', "丝织", "科技·发明", "工农营造", "一根蚕丝牵动的文明交流线。", ((BODIES.get("keji-fangzhi", "") + EXTRA.get("keji-fangzhi", "") + EXTRA2.get("keji-fangzhi", "")) or _OLD.get("keji-fangzhi", "")), None, {'type': 'object', 'params': {'kind': 'silkroad', 'label': None}}, ['丝织', '丝绸', '工艺'])
+E('diji-jiuzhou', "九州与禹贡", "地理·民族·军事", "疆域山川", "《尚书·禹贡》划定的天下蓝图。", ((BODIES.get("diji-jiuzhou", "") + EXTRA.get("diji-jiuzhou", "") + EXTRA2.get("diji-jiuzhou", "")) or _OLD.get("diji-jiuzhou", "")), [{'lib': '禹贡', 'id': 'yg-1'}], {'type': 'character', 'params': {'char': '州', 'seal': False}}, ['九州', '禹贡', '地理'])
+E('diji-jianghe', "黄河长江", "地理·民族·军事", "疆域山川", "哺育文明的两河，定义中国的南北。", ((BODIES.get("diji-jianghe", "") + EXTRA.get("diji-jianghe", "") + EXTRA2.get("diji-jianghe", "")) or _OLD.get("diji-jianghe", "")), [{'lib': '水经注', 'id': 'sj-2'}], {'type': 'character', 'params': {'char': '川', 'seal': False}}, ['黄河', '长江', '山川'])
+E('diji-dayunhe', "大运河", "地理·民族·军事", "交通驿传", "贯通南北的人工输血管。", ((BODIES.get("diji-dayunhe", "") + EXTRA.get("diji-dayunhe", "") + EXTRA2.get("diji-dayunhe", "")) or _OLD.get("diji-dayunhe", "")), None, {'type': 'character', 'params': {'char': '运', 'seal': False}}, ['大运河', '漕运', '交通'])
+E('diji-sichou', "丝绸之路", "地理·民族·军事", "交通驿传", "横贯欧亚的文明交流大动脉。", ((BODIES.get("diji-sichou", "") + EXTRA.get("diji-sichou", "") + EXTRA2.get("diji-sichou", "")) or _OLD.get("diji-sichou", "")), None, {'type': 'object', 'params': {'kind': 'silkroad', 'label': None}}, ['丝绸之路', '贸易', '交通'])
+E('diji-minzu', "华夏与民族", "地理·民族·军事", "民族交融", "以文化而非血统界定的认同。", ((BODIES.get("diji-minzu", "") + EXTRA.get("diji-minzu", "") + EXTRA2.get("diji-minzu", "")) or _OLD.get("diji-minzu", "")), [{'lib': '禹贡', 'id': 'yg-2'}], {'type': 'character', 'params': {'char': '华', 'seal': False}}, ['民族', '华夏', '融合'])
+E('diji-chama', "茶马古道", "地理·民族·军事", "民族交融", "以叶换蹄的西南命脉。", ((BODIES.get("diji-chama", "") + EXTRA.get("diji-chama", "") + EXTRA2.get("diji-chama", "")) or _OLD.get("diji-chama", "")), [{'lib': '茶经', 'id': 'cj-1'}], {'type': 'character', 'params': {'char': '茶', 'seal': False}}, ['茶马古道', '民族', '贸易'])
+E('diji-bingzhi', "兵制演变", "地理·民族·军事", "兵制战事", "兵从哪来、听谁指挥的千古难题。", ((BODIES.get("diji-bingzhi", "") + EXTRA.get("diji-bingzhi", "") + EXTRA2.get("diji-bingzhi", "")) or _OLD.get("diji-bingzhi", "")), None, {'type': 'character', 'params': {'char': '兵', 'seal': False}}, ['兵制', '军制', '军事'])
+E('diji-zhanyi', "著名战役", "地理·民族·军事", "兵制战事", "长平、赤壁、淝水：历史的转折手。", ((BODIES.get("diji-zhanyi", "") + EXTRA.get("diji-zhanyi", "") + EXTRA2.get("diji-zhanyi", "")) or _OLD.get("diji-zhanyi", "")), [{'lib': '史记', 'id': 'shiji-2'}], {'type': 'character', 'params': {'char': '战', 'seal': False}}, ['战役', '军事', '历史'])
+E('diji-sunzi', "孙子兵法与谋略", "地理·民族·军事", "兵制战事", "不战而屈人之兵的全胜之道。", ((BODIES.get("diji-sunzi", "") + EXTRA.get("diji-sunzi", "") + EXTRA2.get("diji-sunzi", "")) or _OLD.get("diji-sunzi", "")), [{'lib': '孙子兵法', 'id': 'szbf-1'}], {'type': 'character', 'params': {'char': '谋', 'seal': False}}, ['孙子', '兵法', '谋略'])
+E('diji-bingqi', "城防与兵器", "地理·民族·军事", "兵制战事", "攻与守的反复较量。", ((BODIES.get("diji-bingqi", "") + EXTRA.get("diji-bingqi", "") + EXTRA2.get("diji-bingqi", "")) or _OLD.get("diji-bingqi", "")), None, {'type': 'object', 'params': {'kind': 'greatwall', 'label': None}}, ['城防', '兵器', '军事'])
+E('diji-yizhan', "驿传与交通", "地理·民族·军事", "交通驿传", "没有电讯时代的「信息基础设施」。", ((BODIES.get("diji-yizhan", "") + EXTRA.get("diji-yizhan", "") + EXTRA2.get("diji-yizhan", "")) or _OLD.get("diji-yizhan", "")), None, {'type': 'character', 'params': {'char': '驿', 'seal': False}}, ['驿传', '邮传', '交通'])
+E('diji-jiangyu', "疆域变迁", "地理·民族·军事", "疆域山川", "随国力与族群消长而伸缩的版图。", ((BODIES.get("diji-jiangyu", "") + EXTRA.get("diji-jiangyu", "") + EXTRA2.get("diji-jiangyu", "")) or _OLD.get("diji-jiangyu", "")), [{'lib': '禹贡', 'id': 'yg-2'}], {'type': 'character', 'params': {'char': '疆', 'seal': False}}, ['疆域', '地理', '历史'])
+E('diji-fangyan', "方言地理", "地理·民族·军事", "疆域山川", "地上的声音化石，活着的汉语史。", ((BODIES.get("diji-fangyan", "") + EXTRA.get("diji-fangyan", "") + EXTRA2.get("diji-fangyan", "")) or _OLD.get("diji-fangyan", "")), None, {'type': 'character', 'params': {'char': '言', 'seal': False}}, ['方言', '地理', '语言'])
+E('diji-diming', "地名文化", "地理·民族·军事", "疆域山川", "刻在大地上的微缩方志。", ((BODIES.get("diji-diming", "") + EXTRA.get("diji-diming", "") + EXTRA2.get("diji-diming", "")) or _OLD.get("diji-diming", "")), None, {'type': 'character', 'params': {'char': '名', 'seal': False}}, ['地名', '文化', '地理'])
 
-儒家不只是一套说教，更是一套“成德”的工夫：从“修身”做起，推及“齐家、治国、平天下”，个体的人格完善与家国秩序连成一气。《论语》讲“吾日三省吾身”“克己复礼为仁”，都是把外在规范内化为自觉。汉代以后，儒家与选官、教育、法律缠缚在一起，成为王朝正统意识形态。
-
-孔门后学分化，孟子主“性善”、倡“仁政”与“民贵君轻”，荀子主“性恶”、重“礼法”与“劝学”，一偏内圣、一偏外王，却同归儒家大统。汉武帝“罢黜百家，独尊儒术”之后，儒术虽定于一尊，其内核却不断被重新解释——汉儒重灾异谶纬，宋儒谈心性义理，清儒考据训诂，面貌几经换骨。
-
-今天看儒家，不必把它供上神坛，也不必一棍打死。它所强调的“己所不欲，勿施于人”的恕道、对家庭与教育的看重、对“士不可不弘毅”的责任感，仍是中国人日用而不觉的精神基因。读懂儒家，才算摸到中国传统社会那根最粗的“主心骨”。""",
-C("论语", "lunyu-20"), CH("仁"), ["儒家", "论语", "历史", "闯关"])
-
-E("sixiang-daojia", "道家与道教", "思想哲学", "道家·道教", "道法自然、清静无为，另一条安顿生命的路。",
-"""道家起于先秦，以老子为宗。传老子姓李名耳，曾任周守藏室之史，著《道德经》五千言，开篇即言“道可道，非常道”——最高真理不可被概念穷尽。“道”是万物的本原与轨则，“人法地，地法天，天法道，道法自然”，人应顺着万物的本性，不多事、不强为。
-
-“无为”是道家最易被误读的词。它并非躺平不做事，而是“不妄为”“不违背自然节律地作为”，所谓“治大国若烹小鲜”，扰攘越多，败坏越快。老子又擅长辩证：祸福相倚、柔弱胜刚强、大巧若拙，教人在顺逆之间保有弹性。
-
-庄子把道家的精神面推向极致。《逍遥游》写鲲鹏展翅九万里，《齐物论》说“天地与我并生，而万物与我为一”，要人破除是非、物我的执碍，在精神的天地里得大自在。他的“无用之用”“相忘于江湖”，都是教人从功名利禄的窄门里走出来。
-
-汉末，道家方术与民间信仰结合，张道陵创“五斗米道”，道教由此成形。它既吸收老庄的清静，又容纳神仙、符箓、炼丹之术，追求长生与现世福报，深深渗入民俗。儒道一隐一显，一进一退，构成了中国人“达则兼济天下，穷则独善其身”的双重精神结构。""",
-C("道德经", "ddj-25"), CH("道"), ["道家", "道教", "历史"])
-
-E("sixiang-fojia", "中国佛教", "思想哲学", "佛家", "自西徂东，落地生根，化为中国思想的一脉。",
-"""佛教源于古印度，东汉初年（约公元1世纪）经丝绸之路传入中原。史载汉明帝夜梦金人，遣使求法，白马驮经至洛阳，建白马寺，是为汉地佛教之始。早期译经多用“格义”之法，借老庄概念比附佛理，便于时人理解。
-
-佛教的核心是“缘起”与“空”：万法依因缘而起，没有永恒不变的实体；执着于“我”与“法”便是苦的根源。修行意在断惑证真、离苦得乐。传至中土，它与中国固有的儒道碰撞融合：一方面与儒家“孝亲”“入世”观念调适，一方面与道家的“无”“自然”互相发明，终成“三教合流”之势。
-
-禅宗是佛教中国化的巅峰。南朝菩提达摩来华，传“不立文字，教外别传”；至唐代六祖慧能，倡“顿悟”法门——“菩提本无树，明镜亦非台；本来无一物，何处惹尘埃”，强调自心是佛、直下承当，不必向外求玄。禅宗扫去繁琐仪轨，却把修行化入担水砍柴的平常心，深刻影响了宋明理学与文人艺术。
-
-佛教留给中国的，远不止庙宇钟磬：它丰富了汉语词汇（世界、刹那、因果），滋养了雕塑、壁画与山水意境，也提供了一种看待生死、苦难与无常的从容智慧。理解中国思想，绕不开这脉自西徂东的清音。""",
-C("六祖坛经", "zc-1"), CH("佛"), ["佛家", "历史", "闯关"])
-
-E("classic-lunyu", "《论语》", "思想哲学", "经典原文", "半部可治天下，一句足醒平生。",
-"""《论语》是儒家最原始的经典，记录了孔子及其弟子的言行，由孔门后学在战国初年编纂成书，凡二十篇。书名“论”是编排、“语”是答述，合起来便是“经过整理的对话录”。它不重体系建构，而重切近的人伦日用：如何为学、如何事君、如何交友、如何处穷达。
-
-全书以“仁”为骨，以“礼”为筋。“学而时习之”讲为学之乐，“吾日三省吾身”讲修身之切，“己所不欲，勿施于人”讲待人之恕，“克己复礼为仁”讲克制的工夫。孔子论政，主张“德治”与“正名”：“其身正，不令而行”；论教育，主张“有教无类”“温故而知新”，门下弟子三千人，贤者七十二。
-
-《论语》的句式短促如箴铭，却极耐咀嚼。宋代赵普有“半部《论语》治天下”之说，虽近夸张，却道出它在士人精神里的分量。自汉代立为学官，到隋唐入科举，再到南宋朱熹列为“四书”之首，《论语》塑造了千百年读书人的人格底色。
-
-今天读《论语》，不必奉为教条。它最动人的，是那个“知其不可而为之”的老者身影——在礼崩乐坏的乱世里，仍笃信人可以通过学习与修身，把日子过得更像“人”。这种温厚而倔强的力量，至今不旧。""",
-C("论语", "lunyu-16"), CH("论"), ["论语", "经典", "历史"])
-
-E("sixiang-zhongyong", "中庸", "思想哲学", "儒家", "不偏不倚，无过无不及，中国人的尺度智慧。",
-"""“中庸”一词出自《论语》，孔子叹“中庸之为德也，其至矣乎”，视其为至高德行。后来子思（孔子之孙）作《中庸》一篇，到宋代列入“四书”，与《大学》《论语》《孟子》并列，成为士人必读。
-
-中”是“不偏不倚”，“庸”是“平常、常道”。中庸不是和稀泥的平庸，而是恰到好处的分寸感：“过犹不及”，凡事走到极端便要翻坏。它要求在两端之间守住中道——《中庸》说“喜怒哀乐之未发谓之中，发而皆中节谓之和”，未发时浑然平静是“中”，发出来恰如其分是“和”，中和便是天下的大本达道。
-
-中庸也是一套成德工夫：“博学之，审问之，慎思之，明辨之，笃行之”，学、问、思、辨、行五者并进，落到笃行上才算数。它承认人资质有别，但强调“人一能之己百之”的勉力，愚必明、柔必强。
-
-中国人做事讲“度”、处世讲“留余地”、艺术讲“含蓄”，骨子里都有中庸的影子。它教人在刚柔、进退、显隐之间拿捏分寸，既不流于乡愿的滑头，也不陷于偏激的戾气。读懂中庸，便读懂了中国人为何总说“差不多”“刚刚好”背后的那份老练。""",
-C("中庸", "zy-1"), CH("中"), ["儒家", "经典", "历史"])
-
-E("sixiang-mengzi", "孟子", "思想哲学", "儒家", "养浩然之气，倡仁政民本，儒家“亚圣”。",
-"""孟子（约前372—前289）名轲，邹人，受业于子思之门人，一生游说诸侯行“仁政”，郁郁不得志，退而与弟子著书。他上承孔子，下启宋明，被尊为“亚圣”，其言行辑为《孟子》七篇。
-
-孟子思想以“性善”为基石：人人皆有“恻隐、羞恶、辞让、是非”四端，犹如燃火之始、源泉之微，扩而充之便是仁义礼智。他由此推出“仁政”——君主要以不忍人之心，行不忍人之政，制民之产、轻徭薄赋，使百姓“仰足以事父母，俯足以畜妻子”。最振聋发聩的一句：“民为贵，社稷次之，君为轻”，把民本推到了先秦的顶峰。
-
-养气说是孟子的独家工夫：“我善养吾浩然之气”，那是一种“至大至刚”“配义与道”的精神气象，靠长期集义而生，非袭取可得。面对功利喧嚣的战国，他宁“舍生而取义”，以道义制衡权力。他又好辩，力辟杨朱“为我”、墨家“兼爱”，在论战中确立了儒家正统。
-
-韩愈尊孟子为“道统”中继孔子之人，朱熹把《孟子》抬入“四书”。那句“天将降大任于是人也，必先苦其心志……”更成为千古励志格言。读孟子，会遇见一种凛然不可犯的人格——原来儒者不只有温润，也有剑气。""",
-C("孟子", "mengzi-1"), CH("孟"), ["儒家", "孟子", "历史"])
-
-E("sixiang-zhuangzi", "庄子", "思想哲学", "道家·道教", "逍遥于物外，齐物于心中，道家的诗意极境。",
-"""庄子（约前369—前286）名周，蒙人，曾为漆园吏，楚威王聘以为相而不往。他承老子之“道”，却把哲学写成了瑰丽恣肆的文学，《庄子》一书想象奇绝，鲁迅称其“汪洋辟阖，仪态万方”。
-
-《逍遥游》写北冥有鱼化为鹏鸟，“怒而飞，其翼若垂天之云”，抟扶摇而上九万里；又借蜩与学鸠的局促，点出“小知不及大知”的眼界之别。真正的逍遥，是“乘天地之正，而御六气之辩”，不凭借任何外物、不被功名死生所累的绝对自由。
-
-《齐物论》更进一步，说“天地与我并生，而万物与我为一”，是非、美丑、生死本是人为的分别，执其一端便生争执。庄周梦蝶，不知周之梦为蝶还是蝶之梦为周，正是要人松开“我执”。他又以“庖丁解牛”喻养生——“依乎天理”，顺物之自然；以“无用之用”教人保全天性，以“相濡以沫，不如相忘于江湖”写尽放手的自在。
-
-庄子的意义，在于给被功名利禄压得喘不过气的中国人，留了一片可以精神飞升的天地。它不教你怎么成功，却教你怎样不被成功绑架。儒是担起，道是放下；一入世一出世，恰好凑成中国人完整的心事。""",
-C("庄子", "zhuangzi-2"), CH("庄"), ["道家", "庄子", "历史"])
-
-E("classic-daodejing", "《道德经》", "思想哲学", "经典原文", "五千言，藏天下至理；一个“道”，说尽玄机。",
-"""《道德经》又称《老子》，传为春秋末老聃所著，约五千言，分《道经》《德经》两篇，是道家开山经典，也是被译成外文最多的中国典籍之一。
-
-全书枢纽在一“道”字：道是天地未分时的本原，“道可道，非常道”，它超越言语名相，却“周行而不殆”，生化万物。“德”是道在万物身上的落实——“孔德之容，惟道是从”。老子教人法地、法天、法道、法自然，把生命安放在更大的秩序里。
-
-“无为”是全书眼目。“为学日益，为道日损，损之又损，以至于无为”，无为不是不为，而是不妄为、不逞强、不逆物性。“治大国若烹小鲜”，执政者少折腾，百姓自安。老子尤擅反向思维：“上善若水，水善利万物而不争”；大成若缺、大巧若拙、柔弱胜刚强——看似退守，实则含藏无穷的生机。
-
-《道德经》像一口深井，政治家读出了“无为而治”，兵家读出了“将欲歙之，必固张之”，养生家读出了“专气致柔”，艺术家读出了“大音希声”。它的魅力正在“言有尽而意无穷”——你站多高，就看见多深。一部薄薄的五千言，养活了后世无数注家，也养活了中国人的另一种活法。""",
-C("道德经", "ddj-8"), CH("德"), ["道家", "经典", "历史"])
-
-E("classic-daxue", "《大学》", "思想哲学", "经典原文", "三纲八目，修齐治平，儒者的路线图。",
-"""《大学》原为《礼记》中的一篇，相传为曾子所作，宋代朱熹把它抽出，与《论语》《孟子》《中庸》合编为“四书”，列为科举入门之首。它篇幅不长，却给儒者画出了一张从内圣到外王的清晰路线图。
-
-开篇即立“三纲领”：“大学之道，在明明德，在亲民，在止于至善。”人本有光明之德，学问要做的是把它彰显出来，推己及人，最终安顿在“至善”的境界。接着是“八条目”：格物、致知、诚意、正心、修身、齐家、治国、平天下——前五项向内用功，是“内圣”；后三项向外推展，是“外王”。
-
-八条目是一条连贯的因果链：物格而后知至，知至而后意诚，意诚而后心正，心正而后身修……环环相扣，缺一环便塌。最要紧的是“修身”居其中枢——它是内圣与外王的交汇点，也是每个人伸手够得着的起点。“自天子以至于庶人，壹是皆以修身为本”，无论贵贱，工夫都从自己身上做起。
-
-《大学》把高远之道拉回切近：治国平天下这样的大事，根基原在“毋自欺”的诚意、在“如好好色、如恶恶臭”的真切。它不玄虚，却极有力量——中国人“以天下为己任”的担当，正是从这短短千余字里长出来的。""",
-C("四书章句", "sishu-1"), CH("学"), ["儒家", "经典", "历史"])
-
-E("sixiang-yinyang", "阴阳五行", "思想哲学", "通识", "中国人的宇宙语法，万事万物的说明书。",
-"""阴阳五行是贯穿中国传统的一整套宇宙图式，不是某一家一派之私，而是古人理解世界的“通用语法”。它上接《易经》的阴阳，下连医药、历法、兵法、农事，渗透到生活的每一道缝隙。
-
-“阴阳”二字，早见于《诗经》《周易》。日光照处为阳，背阴处为阴；引申为天地、男女、动静、寒暑、显隐的两面。阴阳不是善恶对立，而是互补流转的两种力量——“一阴一阳之谓道”，孤阳不生、孤阴不长，万物就在阴阳的消长中生生不息。
-
-“五行”之说成熟于《尚书·洪范》：水、火、木、金、土五种基本元素，各有性格——水曰润下、火曰炎上、木曰曲直、金曰从革、土爰稼穑。它们相生（木生火、火生土……）亦相克（水克火、火克金……），构成一个动态平衡的循环。后来邹衍把它推演成“五德终始”，说朝代更替皆禀五行之德，为政权更迭提供天道依据。
-
-这套思维今日看虽非现代科学，却自有智慧：它强调关联与整体、强调平衡与节制，深刻塑造了中医（辨阴阳虚实、五行配五脏）、风水、乃至中国人的辩证习惯。读懂阴阳五行，便拿到了读懂中国传统的一把钥匙。""",
-C("易经", "yj-1"), CH("阴"), ["阴阳", "五行", "历史"])
-
-E("sixiang-xunzi", "荀子", "思想哲学", "儒家", "性恶而言善，礼法并施，儒家的另一脉。",
-"""荀子（约前313—前238）名况，赵人，曾三为稷下学宫祭酒，是战国儒家的殿军。他与孟子同为孔子后学，却开出截然不同的路数：孟子主“性善”，荀子主“性恶”。
-
-荀子认为人性本有趋利避害、好声色安逸的本能，“饥而欲食，寒而欲暖，劳而欲息”，顺着它便争夺生而辞让亡，所以“人之性恶，其善者伪也”——“伪”非虚伪，而是“人为”，即后天教化习得的善。由此他重“师法之化、礼义之道”，强调以礼法约束、以教育矫治，把人从自然状态导向文明。
-
-《劝学》是荀子最脍炙人口的篇什：“青，取之于蓝，而青于蓝”“锲而不舍，金石可镂”，讲积累与恒心；“君子性非异也，善假于物也”，讲借力与学习。他主张“礼法并施”——礼是养欲给求、明分使群的教化，法是用刑赏维持秩序的底线，二者一柔一刚，缺一不可。
-
-荀子门下出了两位改变历史的学生：韩非与李斯。他的“性恶—隆礼—重法”一脉，下启法家，也影响了汉代“礼法结合”的治理术。读荀子，会看到儒家并不只会温良——它也有正视人性幽暗、用制度兜底的那一份清醒与冷峻。""",
-C("荀子", "xunzi-1"), CH("荀"), ["儒家", "荀子", "历史"])
-
-E("sixiang-mojia", "墨家", "思想哲学", "墨家", "兼爱非攻、尚贤节用，平民的侠义理想。",
-"""墨家是战国与儒并称的“显学”，创始人墨翟（墨子，约前470—前390），出身工匠，自称“贱人”，却以一双草鞋、一片侠心游走诸侯之间。儒家重礼差别，墨子偏要“兼爱”——不分亲疏贵贱，一视同仁地相爱，“兼相爱，交相利”，爱人者人恒爱之。
-
-“非攻”是兼爱的自然延伸。墨子反对不义之战，却非空谈：他精通守城器械，曾裂裳裹足十日十夜赶到楚国，与公输般“沙盘推演”九攻九拒，硬是止住了楚伐宋的刀兵。这般“摩顶放踵利天下而为之”的实干，正是墨者“任侠”的精神标本。
-
-墨家还有一套极清醒的主张：“尚贤”打破贵族世袭，“官无常贵，民无终贱”；“尚同”求上下意志之一致；“节用”“节葬”“非乐”反对厚葬久丧、繁文缛节，站在劳苦大众一边。在认识论上，墨子提出“三表法”——言必“本之于古者圣王之事”“原察百姓耳目之实”“发以为刑政，观其中国家百姓之利”，已近似经验主义的检验标准。
-
-可惜秦统一后，墨家因组织严密、主张反等级而渐遭压制，汉武独尊儒术后更趋中绝，其侠义精神却潜入民间，化作“路见不平”的江湖血气。墨子，是中国思想里那道替弱者出头的、明亮而寂寞的光。""",
-C("墨子", "mozi-1"), CH("墨"), ["墨家", "历史"])
-
-E("sixiang-fajia", "法家", "思想哲学", "法家", "不别亲疏、不殊贵贱，一断于法。",
-"""法家是战国最讲“务实”的学派，不谈仁义玄远，专究“如何把国家做强”。其源流有三：管仲、李悝重“法”，申不害重“术”，慎到重“势”，至韩非（约前280—前233）集其大成，著《韩非子》五十五篇，秦王政读之叹“寡人得见此人与之游，死不恨矣”。
-
-法家的核心是“法、术、势”三者共济。“法”是公开成文、赏罚分明的国法，“法不阿贵，绳不挠曲”，贵族犯法与庶民同罪；“术”是君主暗藏的驭臣之智，循名责实、察奸防欺；“势”是君王必据的权位威势，如鱼依水。三者结合，便能“事在四方，要在中央”。
-
-法家不相信靠道德自觉能治国，而相信靠制度激励与威慑。它主张“世异则事异，事异则备变”，反对“以先王之政，治当世之民”的泥古，力推变法图强——商鞅在秦“徙木立信”、废井田奖耕战，正是法家剧本的实景。它又重农战、弱私门，把国力高度集中于君主与耕战。
-
-秦凭法家之术一统天下，却也因“仁义不施”二世而亡，给后人留下“秦鉴”。汉以后，明面上“独尊儒术”，暗地里“霸王道杂之”，儒表法里，实是法家精神换了张儒家的面孔，继续在中国政治的骨子里发挥作用。""",
-C("韩非子", "hz-2"), CH("法"), ["法家", "历史"])
-
-E("sixiang-lizhu", "程朱理学", "思想哲学", "理学", "存天理、穷义理，儒家的哲学化高峰。",
-"""唐代佛老盛行，儒家在“天道性命”问题上显得粗疏。宋儒起而回应，把儒学重新哲学化，史称“理学”或“道学”。其奠基者周敦颐（太极图说）、张载（“为天地立心，为生民立命”）、二程兄弟（程颢、程颐），至朱熹（1130—1200）集大成。
-
-理学的枢纽在“理”：“宇宙之间，一理而已”，天理是万物的本体与法则，也是人伦道德的根源。“性即理也”，人禀理而成性，本具仁义礼智。然气质有清浊，故需“变化气质”。“格物致知”是下手工夫——今日格一物、明日格一物，今日穷一理、明日穷一理，积累既久，豁然贯通，则“众物之表里精粗无不到，而吾心之全体大用无不明”。
-
-朱熹编订《四书章句集注》，把《大学》《中庸》《论语》《孟子》定为次第，元明清三代奉为科举范本，天下士子出入皆由此门。他讲“存天理，灭人欲”，后世常讥其压抑，实则其本意是“明天理之本然，去人欲之私蔽”，并非禁绝正当情欲。
-
-理学把儒家从“礼”的规范，升华为“理”的宇宙—心性体系，回应了佛老的挑战。它让读书人相信：格物穷理不仅是求知，更是成德。这份“为往圣继绝学”的气象，至今读来仍有雷霆万钧之力。""",
-C("中庸", "zy-3"), CH("理"), ["理学", "儒家", "历史"])
-
-E("sixiang-xinxue", "陆王心学", "思想哲学", "心学", "心即理、知行合一，一盏向内点亮的光。",
-"""当朱熹的“格物”渐成支离记诵，另有一脉转向内心——这便是“心学”。北宋程颢已露端倪，南宋陆九渊（1139—1193）正式揭出“心即理也”“宇宙便是吾心，吾心即是宇宙”，主张发明本心、不假外求。
-
-把心学推到极处的是明代王守仁（1472—1529），世称王阳明。他早岁笃信朱学，曾对竹“格”了七天病倒，始疑旧说。谪居贵州龙场，于困顿中忽然悟道：“圣人之道，吾性自足，向之求理于事物者误也”——这就是著名的“龙场悟道”。“心即理”确立，道德法则不在外物，而在本心。
-
-由此开出“知行合一”：知是行之始，行是知之成，离了行便不是真知；“一念发动处，便即是行了”，要人在念头上用功。晚年更揭“致良知”——人人心中有个知是知非的“良知”，学问只在此心天理上体认、在事事物物上落实，“满街都是圣人”的笃信由此而来。
-
-心学一扫支离，把成圣的门槛从“格尽天下之物”降到“向内一转”。它点燃了明代士人的主体性，也远播日本，佐藤一斋、吉田松阴辈借此鼓动维新。读心学，最动人的不是理论，而是那份“你本具足、只管去做”的痛快与担当。""",
-C("传习录", "czl-1"), CH("心"), ["心学", "儒家", "历史"])
-
-E("sixiang-xuanxue", "魏晋玄学", "思想哲学", "玄学", "辨名析理、越名任心，乱世里的清谈与风流。",
-"""汉末丧乱，名教（儒家礼法）的神圣性随皇权一同崩塌。士人在血色政局中转向老庄，兴起一股“玄学”思潮——因探讨《老子》《庄子》《周易》三部“三玄”而得名，约盛行于曹魏至两晋。
-
-玄学之“玄”，出于“玄之又玄，众妙之门”，意指幽深难名的本体。它要解决的，是“名教”与“自然”的关系：名教（礼法等级）是否出于自然之道？何晏、王弼主“贵无”，认为“以无为本”，主张“名教出于自然”，想给僵化的礼法找一个本体的根基；嵇康、阮籍则更决绝，喊出“越名教而任自然”，以狂放对抗虚伪。
-
-“竹林七贤”是这股风气的肉身：阮籍穷途恸哭，嵇康临刑奏《广陵散》，刘伶纵酒裸身……看似颓放，实则在高压下以荒诞保全性命与真性。他们“清谈”不涉实务，专辨“有无”“言意”“声无哀乐”，在抽象思辨里安顿无处着落的灵魂。
-
-玄学上承老庄、下启佛理，把道家精神化为士人的风度与审美，也深刻影响了山水画、书法的“得意忘言”。它提醒我们：在一个不许认真说话的时代，人仍可以用思辨与风流，守住内心那点不肯妥协的清贵。""",
-C("易经", "yj-3"), CH("玄"), ["玄学", "道家", "历史"])
-
-E("sixiang-dongzhongshu", "董仲舒与独尊儒术", "思想哲学", "儒家", "罢黜百家、独尊儒术，儒家登上正统之位。",
-"""汉武帝即位之初，这位少年天子亟思有所作为。公元前134年，他下诏举贤良对策，广川人董仲舒（前179—前104）连上三策，史称“天人三策”，为汉家定下了一整套长治久安的意识形态。
-
-董仲舒的核心主张是“罢黜百家，独尊儒术”。他并非简单排斥他家，而是以儒家为骨，吸纳阴阳五行，建构起“天人感应”的宇宙—政治学说：天是有人格、有意志的最高主宰，“道之大原出于天，天不变，道亦不变”；君主受命于天，施政当顺天休命，灾异则是天对失德的谴告。这就给皇权套上了一道“天命”的缰绳。
-
-他又发挥“三纲五常”——“君为臣纲、父为子纲、夫为妻纲”，配以仁谊（义）礼知（智）信“五常”，把儒家伦理凝固为社会秩序的基本支柱，影响中国两千余年。在教育上，他建议“兴太学、置明师”，以儒经养士，使儒学与选官合一。
-
-“独尊儒术”让儒家从诸子之一跃为王朝正统，奠定了此后两千年“政教合一”的格局。它有功有过：功在凝铸共同价值、文教蔚然；过在思想一尊、束缚异说。读懂董仲舒，便读懂了“中国特色”的政教传统是如何被焊牢的。""",
-C("春秋繁露", "czfl-1"), CH("董"), ["儒家", "汉", "历史"])
-
-E("sixiang-yijing", "易学与象数", "思想哲学", "通识", "群经之首，穷理尽性，开物成务。",
-"""《周易》被尊为“群经之首”，其来甚远。传伏羲画八卦，文王演为六十四卦并系卦辞，孔子作“十翼”为之作传，由一部占筮之书升华为哲思经典。书名“易”，一说“变易”，言生生不息；一说“简易”，言大道至简；一说“不易”，言本体恒常——三义俱全。
-
-《周易》以阴阳二爻（— 与 --）三叠成八卦，再两卦相重为六十四卦，每卦六爻，模拟宇宙间种种情势。“一阴一阳之谓道”，阴阳交感而生变化，“穷则变，变则通，通则久”，把“变”本身视为永恒法则。它不提供标准答案，而提供一套在变动中审时度势的智慧。
-
-易学后来分两途：“象数”重卦象、爻数、阴阳消息，衍生出历法、术数、中医运气之学；“义理”重卦辞爻辞中的德义，借以讲心性修养与处世进退。二者一科一哲，共撑起中国人的宇宙感。
-
-《周易》最动人的，是那种“惧以终始，其要无咎”的忧患与审慎：它教人于顺境知止、于逆境守正，在每一个“时”里做出合宜的选择。一部《易》，说到底是中国人面对无常世界时，那份既敬畏又从容的生命哲学。""",
-C("易经", "yj-2"), CH("易"), ["易经", "阴阳", "历史"])
-
-print("哲学基础已载入，current entries =", len(entries))
-
-# ============ 历史脉络 (19) ============
-E("lishi-qin", "秦：中央集权之始", "历史脉络", "朝代变迁", "三公九卿、郡县天下，两千年帝制的模板。",
-"""秦（前221—前207）是中国第一个大一统王朝。秦王嬴政扫灭六国，自认“德兼三皇，功过五帝”，乃创“皇帝”之称，自称始皇帝，指望“二世三世至于万世”。制度的奠基，远比疆域的征服更深远影响后世。
-
-秦制的核心是中央集权的官僚制，与周代封建截然不同。中央设“三公九卿”：丞相掌行政、太尉掌军事、御史大夫掌监察，九卿分理宗庙、财政、司法、宾客等务；地方废封建、行郡县，郡守县令皆由中央任免、不得世袭。这就把权力从血缘贵族手里，收归了皇帝与朝廷。
-
-为求“书同文、车同轨、度同制”，秦统一文字（小篆）、货币（半两钱）、度量衡，修筑驰道与万里长城，迁徙豪富、销兵铸钟。商鞅变法奠定的“耕战”机制被推向极致：军功授爵、奖励耕织，国家动员力空前。
-
-然而法家“专任刑罚”也埋下速亡之因：焚书坑儒、峻法苛敛，民不堪命，二世而亡。汉人总结“仁义不施而攻守之势异也”。但秦留下的中央官制、郡县框架，被此后两千年王朝大体承袭——“百代皆行秦政法”，秦虽短，却是帝制中国的“原型机”。""",
-C("韩非子", "hz-1"), CH("秦"), ["历史", "朝代", "秦", "官制"])
-
-E("lishi-han", "汉：大一统的定型", "历史脉络", "朝代变迁", "郡国并行到独尊儒术，奠定华夏筋骨。",
-"""楚汉相争后，刘邦立汉（前202—公元220），定都长安，史称西汉。汉承秦制，却修正了秦的峻急：中央仍为三公九卿、郡县为底，但初年在关东广封同姓诸侯王，形成“郡国并行”——这一妥协很快反噬，景帝时爆发“七国之乱”，平定后推行“推恩令”，化整为零，诸侯权势渐削。
-
-汉武帝（前141—前87在位）是汉的巅峰。他任用桑弘羊理财、卫青霍去病击匈奴、张骞凿空西域；更在思想上接受董仲舒之议，“罢黜百家，独尊儒术”，立五经博士、兴太学，使儒术与皇权、选官合一，华夏的“政教”格局由此焊定。司马迁忍辱著《史记》，“究天人之际，通古今之变”，开纪传体先河。
-
-汉虽屡经外戚、宦官之祸，却把“大一统”铸成中国人的政治本能。疆域东临大海、西逾葱岭、南至南海、北抵大漠，汉族、汉字、汉文化之名皆自此出。东汉迁都洛阳，光武中兴，至末年黄巾乱起、群雄并起。
-
-“大汉气象”不只在武功，更在那份“犯我强汉者，虽远必诛”的自信，与“明犯强汉”四字里透出的、此后两千年都难以磨灭的帝国记忆。""",
-C("史记", "shiji-1"), CH("汉"), ["历史", "朝代", "汉"])
-
-E("lishi-tang", "唐：盛世与开放", "历史脉络", "朝代变迁", "三省六部、科举仕进，长安城里的世界中心。",
-"""李渊立唐（618—907），二世李世民以“贞观之治”奠定盛世底色：虚心纳谏、轻徭薄赋、完善制度。唐都长安规模空前，东西九里、居民百万，胡商云集、佛寺林立，是当时世界上最大的城市之一。
-
-唐的立国之本在制度成熟。中央“三省六部”运作井然：中书省草诏、门下省审核封驳、尚书省执行，尚书下辖吏户礼兵刑工六部，分工制衡、效率卓然；地方为州县二级。选官倚重科举——进士、明经诸科打破门第，寒门士子可凭文章入仕，“朝为田舍郎，暮登天子堂”由是成真。府兵制农战合一，前期边备强盛。
-
-文化上唐是诗的王朝：李白、杜甫、王维、白居易各领风骚，诗歌入乐、传唱闾巷。佛教鼎盛，玄奘西行译经；景教、祆教、伊斯兰也循丝路而来，长安俨然世界宗教博物馆。
-
-安史之乱（755—763）是盛衰拐点：藩镇割据、宦官专权、牛李党争接踵。但唐的生命力惊人，直至黄巢乱起、朱温篡立才告终结。唐留给中国的，是那份“九天阊阖开宫殿，万国衣冠拜冕旒”的雍容与自信——一个愿意向世界敞开自己的黄金时代。""",
-C("资治通鉴", "zztj-1"), CH("唐"), ["历史", "朝代", "唐"])
-
-E("lishi-song", "宋：文人政治与近世", "历史脉络", "朝代变迁", "重文轻武、科举鼎盛，中国的“文艺复兴”。",
-"""宋（960—1279）由赵匡胤陈桥兵变立国，为避免晚唐五代武人乱政，定下“重文轻武”的祖训：杯酒释兵权，节度使归中央，枢密院掌兵、三司掌财、宰相主政，权力分而相制。开国将帅解甲，文官从此主导朝局。
-
-宋的官制精巧而叠床架屋：中央“二府三司”分掌军、政、财，地方设通判分知州之权，监司遍设以控州县。科举在宋达于极盛——进士科为主，推行糊名、誊录以防舞弊，录取规模远超唐，寒士凭策论诗赋直入庙堂，“皇帝与士大夫共治天下”成为现实。王安石变法试图理财强兵，终因政争与执行受挫。
-
-经济文化则迎来“近世”曙光：商业城市汴京、临安灯火连宵，交子（世界最早纸币）行世，海外贸易繁盛；理学（程朱）建构儒学新体系；词、书画、活字印刷、指南针皆于此光大。陈寅恪谓“华夏民族之文化，历数千载之演进，造极于赵宋之世”。
-
-宋的痛处在军事：燕云不守、岁币求和，终亡于蒙元。但它在文治、经济、科技上的高度，让“宋”成为中国人心中另一重文明标杆——未必最强，却足够风流。""",
-C("资治通鉴", "zztj-2"), CH("宋"), ["历史", "朝代", "宋"])
-
-E("lishi-yuan", "元：行省与一统", "历史脉络", "朝代变迁", "草原入主，行省建制，版图空前辽阔。",
-"""元（1271—1368）由蒙古建立，忽必烈取《易经》“大哉乾元”定国号。蒙古铁骑横扫欧亚，灭西夏、金、南宋，第一次把农耕中原与草原、西域、青藏、岭北纳入同一版图，疆域之广为中国历代之最。
-
-元的制度带着鲜明的草原底色。中央设中书省总政务，下设六部；枢密院掌兵，御史台掌监察。最具深远影响的是地方“行中书省”——简称“行省”或“省”，本是中央派出机构，后固化为常设行政区划，今天的“省”即源于此。行省权力集中、军民兼辖，利于辽阔疆域的控制，也埋下后期割据的隐患。
-
-元以种族分四等（蒙古、色目、汉人、南人），科举长期停废，儒生地位跌落，“九儒十丐”虽近夸张，却道出文人的边缘化。但交通与贸易空前：驿站（站赤）星罗，驿道通北边疆，海运漕粮南粮北运，泉州、大都（北京）成世界性港口，马可·波罗笔下的“汗八里”令西人神往。
-
-元虽短祚，却打通了东西方：纸币通行、西学东渐、技术（如天文、火器）交流加速。它提醒我们：中国的“大”，不只有汉唐的雍容，也有草原铁骑带来的、另一种辽阔的“混一”。""",
-C("易经", "yj-3"), CH("元"), ["历史", "朝代", "元"])
-
-E("lishi-ming", "明：内阁与专制顶峰", "历史脉络", "朝代变迁", "废丞相、设内阁，皇权直抵云霄。",
-"""明（1368—1644）由朱元璋推翻蒙元而立。这位出身布衣的帝王对权臣深具戒心，登基不久便借胡惟庸案废除丞相，六部直接听命皇帝，延续一千五百年的宰相制度就此终结，皇权达于空前。
-
-废相之后，皇帝独揽万机，难免不胜其烦，遂设“内阁”以备顾问——大学士票拟奏章、代皇帝草拟批答，权势渐重，时称“辅臣”，却始终无丞相之名、无法定之权。地方上，明改行中书省为承宣布政使司（俗仍称省），三司分权；军事行“卫所”制，军户屯田自给。
-
-明成祖迁都北京、“天子守国门”，派郑和七下西洋；又令解缙等修《永乐大典》，营建紫禁城。科举以“八股”取士，文体严整却渐趋束缚思想。特务机构（锦衣卫、东厂）密布，专制与监控臻于极致。
-
-明虽商品经济活跃、市井文化勃兴（《金瓶梅》《西游记》皆出此际），却困于党争（东林）、宦官（魏忠贤）与财政崩坏，终亡于内乱与外患。清人入关后，几乎全盘继承了明的集权骨架——明，是帝制中国“收权”逻辑的完成式。""",
-C("传习录", "czl-1"), CH("明"), ["历史", "朝代", "明"])
-
-E("lishi-qing", "清：军机处与末世", "历史脉络", "朝代变迁", "满汉共治、军机揽权，帝制的回光与落幕。",
-"""清（1644—1912）是最后一个王朝，由满洲建立。入关后依明制设内阁、六部，却以“满汉双轨”维系统治：要职多满汉并置，实权常归满员；旗民分治，八旗驻防要地。为拢络儒生，清沿明制行科举，又开“博学鸿儒”科、修《明史》《古今图书集成》《四库全书》。
-
-雍正朝的创制最值得留意——设“军机处”。它本为用兵西北而设的临时机构，后成常设，军机大臣跪受笔录、承旨办事，权倾朝野却毫无独立决策之位，皇权由此更紧地握于一人之手。军机处的简、密、速，把中枢决策彻底变成了皇帝的私室家务。
-
-康雍乾三朝号称盛世：摊丁入亩、改土归流、疆域西抵葱岭、北包括外蒙、南定台湾、驻藏大臣镇边，版图奠定今日中国之基。然盛极而衰：闭关锁国、文字狱严苛、八旗腐化、人口膨胀而财政与技术落后，待鸦片战争炮声一响，千年帝制已难撑近代世界之重。
-
-清的落幕，也是两千年帝制的落幕。它留下的，是“天朝”如何被拖入世界体系的沉重课题。""",
-C("资治通鉴", "zztj-1"), CH("清"), ["历史", "朝代", "清"])
-
-E("lishi-sansheng", "三省六部制", "历史脉络", "典章制度", "中书出令、门下封驳、尚书执行，最早的权力制衡。",
-"""“三省六部”是隋唐确立、沿用到清的中央官制主干，堪称中国古代最成熟的行政架构。它把“决策—审核—执行”三权拆分，彼此牵制，皇帝居其上总其成。
-
-“三省”即中书、门下、尚书。中书省掌“出令”——皇帝意旨经中书草拟为诏敕；门下省掌“封驳”——审核诏书，若以为不当可“涂归”（退回）或谏争，唐太宗以“兼听则明”著称，正赖此机制；尚书省掌“执行”，是国家行政中枢。三省长官（中书令、侍中、尚书令及左右仆射）皆为宰相，集体议政于政事堂。
-
-尚书省下统“六部”：吏部铨选、户部财政户口、礼部礼仪科举、兵部武选军务、刑部司法刑狱、工部工程营造。六部之设，几乎覆盖政府全部职能，条理清晰、各守其职，是专业化分工的早期典范。
-
-这套制度并非一蹴而就：隋文帝废北周六官、始立三省，唐承而细化；后世虽有“同中书门下平章事”“枢密院”“内阁”等名目更易，六部骨架却基本未动，直到光绪改制。它证明：中国很早就懂得用“分权—合议”来防止专断与壅蔽，是制度文明里极可骄傲的一笔。""",
-C("周礼", "zl-1"), CH("官"), ["历史", "朝代", "官制"])
-
-E("lishi-keju", "科举制", "历史脉络", "典章制度", "打破门第、以文取士，古代最重大的制度发明。",
-"""科举是隋以后绵延一千三百年的选官制度，被西方学者誉为“中国的第五大发明”。它用一个相对公平的考试，把读书、做官、治国拧成一股绳，深刻塑造了中国的社会流动与精神气质。
-
-隋文帝废九品中正、炀帝始设“进士科”，开科取士之端。唐承之并完善：进士重诗赋、明经重经义，及第者“春风得意马蹄疾”。宋是科举的成熟期——糊名（弥封）、誊录（抄卷）防舞弊，录取放宽、名额大增，寒门子弟得以“朝为田舍郎，暮登天子堂”，门第垄断就此打破。
-
-明清科举程式化至极：以“八股”取士，考生依《四书》朱注作八股文，格式严整、代圣人立言。它标准化、可操作，却也渐成思想枷锁。科举与学校、官阶紧密咬合，读书人“学而优则仕”的通道由此定型，社会因而高度重文。1905年，清廷废科举，兴学堂，这一古老制度终退场。
-
-科举之功，在“公开竞争、机会均等”，让平民看见上升的希望，也以文化而非血统选才；其弊，在应试僵化、轻视实学。它既是公平的阶梯，也是顺从的模具——理解科举，便理解了中国人为何“万般皆下品，唯有读书高”。""",
-C("荀子", "xunzi-2"), CH("举"), ["历史", "朝代", "科举"])
-
-E("lishi-jiancha", "监察与谏官", "历史脉络", "典章制度", "御史纠弹、谏官封驳，皇权的自我纠错机制。",
-"""中国很早就有一套独立于行政之外的监察系统，用以“纠察百官、肃正纲纪”，是帝国自我纠错的重要设计。它分两条线：对下的“监察”，与对上的“谏诤”。
-
-秦汉已置御史大夫，掌典章法度、纠劾百官；汉武帝分全国为十三州部，设刺史“以六条问事”，专察地方二千石。隋唐中央设御史台（台院、殿院、察院），“台谏”之制渐成。明改御史台为都察院，都御史“专纠百僚”，又设六科给事中，分察六部，谓之“科道”。清沿明制，科道合一。
-
-“谏官”则面向皇帝：唐有门下省之“谏议大夫”，宋有“台谏”并称，御史弹百官、谏官规天子，风闻言事、不避权贵。包拯、海瑞之流，正是这般“宁鸣而死，不默而生”的角色。封驳权（门下省驳回诏书）更使错误政令可止于未发。
-
-监察虽依附皇权、难以制约最高权力，却在整肃吏治、缓冲暴政上功不可没。它体现一种朴素理想：权力须被注视，即便是皇帝，也应有人敢说“不可”。这份“以法绳权”的雏形，至今仍有回响。""",
-C("周礼", "zl-1"), CH("察"), ["历史", "朝代", "官制"])
-
-E("lishi-fenjun", "分封与郡县", "历史脉络", "典章制度", "封建与郡县之争，贯穿两千年的一条暗线。",
-"""“封建”本义是“封土建国”——周天子把土地与人民分封给宗亲、功臣，世袭其爵、自成一国，形成“天子—诸侯—卿大夫”的等级网。这套制度在西周维系了数百年“礼乐征伐自天子出”的秩序，却也因诸侯坐大，终成春秋战国的礼崩乐坏。
-
-秦并天下，廷议“封还是郡”，丞相李斯力主郡县，嬴政拍板“天下共苦战斗不休，以有侯王”，遂废封建、行郡县。此乃划时代转折：官员由中央任免、不世袭，权力收归朝廷。汉初“郡国并行”是妥协，七国之乱后推恩令削藩，郡县复为主流。
-
-此后“封建”与“郡县”之争不绝：西晋大封同姓而“八王之乱”，唐末藩镇几成诸侯，明初封王而靖难；但总体趋势是中央集权愈紧，元“行省”、明“三司”、清“督抚”，皆在郡县框架内微调。柳宗元作《封建论》，直指“封建非圣人意也，势也”，道出制度随势而转。
-
-一条暗线贯穿始终：分权则易乱、集权则易僵。中国在“统”与“分”之间反复摇摆，摸索出一套既防割据、又保活力的治理配方。读懂分封与郡县，便读懂了“大一统”为何成为中国人挥之不去的政治本能。""",
-C("史记", "shiji-2"), CH("封"), ["历史", "朝代", "官制"])
-
-E("lishi-zaixiang", "宰相制度演变", "历史脉络", "典章制度", "从三公到内阁，一个职位的两千年退场。",
-"""宰相是“百官之首”，辅助皇帝总理万机。其名虽无恒定，其职贯穿帝制始终，而职权却一路收缩，恰是皇权不断集中的缩影。
-
-商周有“三公”（太师、太傅、太保），秦设丞相“掌丞天子，助理万机”，位极人臣；汉沿之，丞相（大司徒）、太尉、御史大夫为三公。汉武帝内朝崛起、架空外朝，相权始削。隋唐“三省”长官皆为相，政事堂合议，相权倒是规范而稳固。
-
-宋太祖“杯酒释兵权”，设枢密掌兵、三司掌财，宰相只剩行政，且“同平章事”多名并置、互牵。元以中书省总政务，相权复重，终于逼出明太祖的决断——借胡惟庸案废丞相，永不为制。明以“内阁”备顾问，大学士票拟而无决定权；清设“军机处”，军机大臣跪受笔录，相权几近归零。
-
-从“三公九卿”到“内阁军机”，宰相由坐而论道到跪而承旨，不是官职的消失，而是权力向皇帝一人的收拢。这一演变揭示帝制的内在逻辑：任何可能分润最高权力的职位，终将被削弱或架空。理解宰相的退场，便理解了“朕即国家”是如何炼成的。""",
-C("韩非子", "hz-1"), CH("相"), ["历史", "朝代", "官制"])
-
-E("lishi-ganzhi", "干支与历法", "历史脉络", "典章制度", "十天干十二地支，中国人的时间密码。",
-"""中国人记时，最独特的一套系统是“干支”——天干十、地支十二，两两相配，循环成六十甲子。这套密码用了三千余年，至今仍在春节对联、生辰八字里活着。
-
-“天干”为甲、乙、丙、丁、戊、己、庚、辛、壬、癸；“地支”为子、丑、寅、卯、辰、巳、午、未、申、酉、戌、亥。十与十二的最小公倍数为六十，故干支六十轮回一周，称为“六十甲子”——从甲子、乙丑……到癸亥，再回到甲子。古人用以纪年、纪月、纪日、纪时（一时辰合今两小时，一日十二辰）。
-
-干支之上，是“农历”（阴阳合历）：以月相定月、以太阳定年，置闰月以调阴阳，使年与四季相合；又依太阳黄道划“二十四节气”，指导农事——“春雨惊春清谷天”，农人靠它安排播种收割。节气是农历的“阳历骨架”，干支则是其“序号系统”。
-
-上古有“岁星纪年”（木星约十二年一周天），后假想“太岁”逆行之，配干支纪年。今日我们说的“甲辰年”“乙巳年”，正源于此。干支历法不只关乎农时，更沉淀为中国人“敬天授时”的世界观——顺四时而动，方不负光阴。""",
-C("千字文", "qz-2"), CH("历"), ["历史", "历法", "节气"])
-
-E("lishi-sichou", "丝绸之路", "历史脉络", "重大事件", "一条商路，连起欧亚大陆的文明血脉。",
-"""丝绸之路是古代中国与西方交往的大动脉，因丝绸为主货而得名。其开通，以西汉张骞“凿空”为标志：公元前138年与119年，张骞两使西域，历尽艰险抵大月氏、乌孙，虽未达成夹击匈奴之约，却带回西域的地理物产，丝路由此贯通。
-
-陆上丝路以长安为起点，经河西走廊、敦煌，分南北两道穿西域，越葱岭入中亚、波斯，直抵地中海的罗马。往来其间的不止丝绸，更有瓷器、漆器西去，葡萄、苜蓿、石榴、胡麻东来；印度佛教沿此传入，深刻改写了华夏精神；音乐、舞蹈、绘画、器物纹样也随之交融。
-
-唐中期后，陆路时断时通，“海上丝绸之路”渐盛：广州、泉州、明州（宁波）舟船通南洋、阿拉伯，乃至东非。宋元海贸繁盛，马可·波罗循此抵元大都。丝路本质是和平的交换——商旅、僧侣、使节络绎，把欧亚大陆连成一张文明之网。
-
-“二人同心，其利断金”，丝路正是不同族群“同心”的千年实践。它告诉我们：文明从不是孤岛，正是在驼铃与帆影的往来里，人类才彼此丰盈。今天“一带一路”的回响，正可上溯到这条古老的、温柔的经络。""",
-C("易经", "yj-2"), CH("丝"), ["历史", "朝代", "丝路"])
-
-E("lishi-sida", "四大发明", "历史脉络", "重大事件", "造纸印刷火药指南针，改变世界的中国创造。",
-"""“四大发明”指造纸术、印刷术、火药、指南针，由英国哲学家培根盛赞、经李约瑟系统阐发，被公认为中国对世界文明最重大的技术贡献。它们西传，直接催熟了近代欧洲。
-
-造纸：西汉已有麻纸，东汉蔡伦以树皮、麻头、破布“捣烂为浆”改良工艺（“蔡侯纸”），价廉物美，取代竹简缣帛，知识传播自此普惠。印刷：唐有雕版，北宋毕昇发明胶泥活字，“若印数十百千本，则极为神速”；后活字辗转传入朝鲜、欧洲。火药：源于道家炼丹，唐末用于军事，宋明造出突火枪、火铳，元随蒙古西征传入阿拉伯与欧洲。指南针：战国“司南”为祖，宋沈括《梦溪笔谈》详记磁针“常微偏东，不全南”的指南现象，用于航海，大航海时代的罗盘由此而来。
-
-四大发明西传的路径各异：造纸经阿拉伯入欧，火药、指南针随蒙古与海路西去，印刷术经丝路与商人北传。它们分别解放了知识、重塑了战争、开启了远洋——文艺复兴、宗教改革、地理大发现，背后都有中国技术的影子。
-
-回望，它们是“器物”的骄傲，也留下一问：为何原发于斯的创造，未能在本土催生出现代科学？这正是后人反复咀嚼的“李约瑟之问”。""",
-C("梦溪笔谈", "mxt-1"), CH("器"), ["历史", "朝代", "发明"])
-
-E("lishi-changcheng", "长城", "历史脉络", "重大事件", "蜿蜒万里的边界，也是文明的隐喻。",
-"""长城不是一道墙，而是一套延续两千多年的军事防御体系。它的修筑始于战国：秦、赵、燕诸国为御北方游牧，各筑北边烽燧障塞。秦一统后，始皇“乃使蒙恬北筑长城而守藩篱”，把各国旧城连缀延伸，“因地形，用制险塞”，西起临洮、东至辽东，史称“万里长城”。
-
-汉长城更远——为护通西域的丝路，向西增修至敦煌以西，并广设亭障、屯田戍守。此后北魏、北齐、隋皆曾修葺。我们今天见到的主体，多为明代所筑：明太祖起历代续修，以砖石包砌、敌台林立，东起鸭绿江、西抵嘉峪关，气势恢宏。
-
-长城的功能在“限”与“守”：墙、堡、烽燧（举火为号）、关城（如山海关、居庸关、嘉峪关）构成预警—阻遏—反击的链条，使农耕文明得以在北方门户前争取喘息。它见证的是墙内墙外两种生计——农耕与游牧——数千年的碰撞、互市与融合。
-
-今天长城早失防御之用，却成了中华文明的图腾：它沉默地诉说着一个民族对“边界”与“守护”的执念，也提醒我们，真正的长城从来不在砖石，而在人心凝聚的国力与意志。""",
-None, CH("城"), ["历史", "朝代", "长城"])
-
-E("lishi-zhenghe", "郑和下西洋", "历史脉络", "重大事件", "宝船七下西洋，和平交往的蓝色壮举。",
-"""郑和下西洋是明初一场空前的远洋壮举。郑和（1371—1433），本姓马，回族，入宫后赐姓郑，是成祖朱棣的亲信内官。自永乐三年（1405）至宣德八年（1433），他先后七次奉命出使，“云帆高张，昼夜星驰”，遍历东南亚、印度、阿拉伯，最远抵达东非沿岸。
-
-船队规模令人咋舌：宝船据载“长四十四丈、阔十八丈”，载员逾两万，携火药、罗盘、水密隔舱等当时顶尖技术，堪比海上移动之城。所至宣示国威、颁赐赏赉、通商互市，带去瓷器丝绸，换回香料珍宝、长颈鹿（时称“麒麟”）。与西方后来的殖民掠夺迥异，郑和船队不占寸土、不事殖民，是和平交往的范式。
-
-可惜壮举未能延续。成祖崩后，朝野“海禁”之声渐起，斥远洋为耗蠹；仁宣以后收缩内敛，伟大的蓝海时代戛然而止。更可叹者，郑和航海的详尽档案《郑和出使水程》竟被兵部郎中刘大夏付之一炬，中国主动拥抱海洋的窗口就此关闭。
-
-“路漫漫其修远兮，吾将上下而求索”——郑和的故事，是古代中国一次向外张望的惊鸿，也是一次错失海洋的叹息。它留给今人的，是开放则兴、封闭则滞的悠远回响。""",
-C("楚辞", "chuci-01"), CH("航"), ["历史", "朝代", "明", "航海"])
-
-E("lishi-weijin", "魏晋南北朝", "历史脉络", "朝代变迁", "门阀政治、民族融合，乱世里的解体与重生。",
-"""魏晋南北朝（220—589）是中国最长的分裂期，却也是最具张力的时代。汉室崩解后，曹魏、蜀汉、孙吴鼎立，司马氏篡魏建晋，短暂统一旋因“八王之乱”与“五胡”内迁而崩裂，北方陷于十六国混战，晋室南渡立东晋，南方则宋齐梁陈递嬗，史称“南北朝”。
-
-政治上，这是“门阀”的黄金时代。选举行“九品中正”，人才品第操于世家大族之手，“上品无寒门，下品无势族”，王、谢、庾、桓诸姓与皇权共天下。军事上，鲜卑等游牧族群入主中原，北魏孝文帝迁都洛阳、全面推行汉化（易服、改姓、通婚），胡汉杂糅，为日后隋唐的混血盛世埋下伏笔。
-
-思想上，儒家正统崩坏，玄学清谈兴起，佛老盛行，士人于乱世中以“风流”自遣——阮籍穷途恸哭、陶潜归去来兮，都是这时代的剪影。文学自觉、书画觉醒、石窟开凿（敦煌、云冈、龙门），艺术在离乱中反而绚烂。
-
-魏晋南北朝的“乱”，实则是一次大解体与大融合：旧秩序碎了，新血液进来了。没有这段胡汉交汇的阵痛，便没有后来那个开放、自信、气血丰沛的盛唐。""",
-C("易经", "yj-3"), CH("魏"), ["历史", "朝代", "魏晋"])
-
-E("lishi-chunqiu", "春秋战国", "历史脉络", "朝代变迁", "礼崩乐坏、百家争鸣，中华文明的奠基时代。",
-"""西周末年，犬戎破镐京，平王东迁洛邑（前770），史称“东周”，分春秋（前770—前476）、战国（前475—前221）两段。天子威权坠地，“礼乐征伐自诸侯出”，春秋五霸、战国七雄相继登场，旧秩序土崩，新世界待生。
-
-这是一个“大争之世”，也是思想史上的奇迹。王室衰微、士阶层崛起，学在官府之局打破，私学勃兴，士人周游列国、各鸣其说，史称“百家争鸣”：儒墨道法名农杂，儒倡仁义、墨主兼爱、道法自然、法重刑赏……诸子互相诘难又彼此吸收，奠定此后两千年中国思想的全部母题。孟子高唱“民为贵，社稷次之，君为轻”，便是这时代民本思想的最强音。
-
-争霸之外，是制度与技术的剧变：铁器牛耕推广、井田瓦解、郡县萌蘖、成文法出现（如《法经》）；各国变法图强，商鞅在秦“废井田、开阡陌、奖耕战”，为统一蓄满势能。终于公元前221年，秦王扫六合，海内为一。
-
-春秋战国像文明的“轴心”：礼崩之处，思想迸发；分裂之痛，换来一统之基。中国人此后两千年安身立命的价值与制度，几乎都在这五百年的风暴里铸成了模。""",
-C("孟子", "mengzi-4"), CH("周"), ["历史", "朝代", "春秋"])
-
-print("历史已载入，current entries =", len(entries))
-
-# ============ 汉字·文学 (14) ============
-E("classic-shijing", "《诗经》", "汉字·文学", "经典原文", "三百篇，思无邪，中国诗歌的源头。",
-"""《诗经》是中国最早的诗歌总集，收西周初至春秋中叶的诗歌三百零五篇，分“风”“雅”“颂”三类。“风”是各诸侯国的土风民歌，最富生活气息；“雅”是朝堂乐歌，分大雅小雅；“颂”则是宗庙祭祀的颂歌。
-
-孔子评《诗》曰“思无邪”，又言“不学诗，无以言”——在春秋，引诗断章是外交辞令的硬功夫。《诗经》多用赋比兴：直陈其事为赋，譬喻为比，托物起情为兴。《关雎》“关关雎鸠，在河之洲”以雎鸟起兴，写君子对淑女的爱慕；《蒹葭》“蒹葭苍苍，白露为霜”营造可望难即的怅惘；《采薇》“昔我往矣，杨柳依依；今我来思，雨雪霏霏”，写尽征人归途的沧桑。
-
-它也是一部周代社会的“百科全书”：农事（《七月》）、战争（《采薇》）、婚恋（《静女》）、宴饮（《鹿鸣》无所不包），“饥者歌其食，劳者歌其事”。赋税、徭役、阶级的叹息，都藏在质朴的句式里。
-
-《诗经》奠定了中国诗歌“哀而不伤、乐而不淫”的温柔敦厚之教，也确立了“诗言志”的传统。此后楚辞、汉赋、唐诗，皆从这三百篇里汲取了第一口乳汁。读《诗》，读的是先民最本真的喜怒哀愁。""",
-C("诗经", "shijing-01"), CH("诗"), ["诗经", "诗词", "经典"])
-
-E("wenzi-xiangxing", "象形与汉字", "汉字·文学", "字源流变", "书画同源，一字一世界。",
-"""汉字是世界上唯一沿用至今的古老文字系统，它的特别，在于“象形”的基因。许慎《说文解字》说“仓颉之初作书，盖依类象形，故谓之文”，最早的字就是照着物形描下来的画：日作☉、月作☽、水作氺、人作𠔼，形义相生，望文可知其意。
-
-汉字的造字，传统归为“六书”。象形之外，还有指事（上、下，以符识位）、会意（武=止戈，信=人言）、形声（江、河，形旁表义、声旁表音）——形声字占今汉字十之八九，使系统得以无限孳乳。与拼音文字不同，汉字不依附语音，各方言区“书同文”，靠字形便能互通，这或许是中华文明千年不绝的隐形纽带。
-
-汉字又是艺术。书法把实用书写升华为笔墨的舞蹈，篆隶草楷行各体，皆由这方方块生出万千气象。“书画同源”并非虚言——甲骨文、金文里，字与画本未分家。
-
-今天简体字虽与篆隶形貌有别，筋骨却一脉相承。理解汉字，等于握住了一把打开中国思维的钥匙：它教人看到，符号如何承载着一整个民族的记忆与审美。""",
-C("说文解字", "sw-1"), CH("字"), ["汉字", "字源", "历史"])
-
-E("wenzi-liushu", "六书", "汉字·文学", "字源流变", "象形指事会意形声，汉字的六把钥匙。",
-"""“六书”是古人总结汉字造字与用字的六条法则，最早见于《周礼》，至汉代《说文解字》方系统阐释，是读懂汉字构造的门径。它分“造字”与“用字”两类。
-
-造字四法：一是“象形”，画成其物，如日、月、山、川；二曰“指事”，以象征符号表抽象，如上、下、本、末；三曰“会意”，合二字之义成一新意，如“武”由“止戈”会“止息干戈”、“休”为人倚木而息；四曰“形声”，由形旁（表义类）加声旁（表读音）组成，如“江”“河”从水、工可声，这是最能产的造字法，今汉字十之八九属此。
-
-用字两法：“转注”与“假借”。转注如“老”“考”义类相通；假借则是“本无其字，依声托事”——比如“令”本义号令，借作县令；“长”本义长短，借作尊长。假借让有限的字形承载了无限的词，是汉字经济性的体现。
-
-六书不是先贤凭空设计的程序，而是对既成文字的后起归纳。但有了这把钥匙，我们再看“灾”（水火之害）、“盗”（私利皿中）、“贼”（败物毁则），便能在字形里读出古人的生活与伦理。汉字，是把世界“画”进符号里的智慧。""",
-C("说文解字", "sw-1"), CH("书"), ["汉字", "字源", "历史"])
-
-E("mengxue-qianziwen", "《千字文》", "汉字·文学", "蒙学", "千字不重，四字成韵，童蒙第一书。",
-"""《千字文》是南朝梁武帝时编定的识字课本，撰者周兴嗣。相传武帝命人拓取王羲之书迹一千个不重复的字，交周兴嗣缀成韵文，周一夜白头，竟成此篇。全文千字，无一复字，四字一句，平仄谐畅，便于记诵。
-
-它的内容包罗极广：开篇“天地玄黄，宇宙洪荒”从开天辟地说起；继之以日月星辰、寒来暑往、物产地理；再入君臣伦理、修身治家、园林宫室、蔬果珍玩；终以“谓语助者，焉哉乎也”收束。一篇小文，竟是缩微的百科与君子修养手册。
-
-南北朝以降，《千字文》与《三字经》《百家姓》并称“三百千”，是孩童开蒙的必经之路。它不唯识字，更在韵脚里把天地秩序、人伦纲常悄悄种进幼小心田。其“寒来暑往，秋收冬藏”“闰余成岁，律吕调阳”等句，还暗含历法农时，足见古人“日用即道”的教育观。
-
-今日读《千字文》，不只为识字，更为领略那份“以千字纳万象”的凝练。一千个不重复的字，撑起了一个文明对世界的整全想象——这是只有汉字才能完成的魔术。""",
-C("千字文", "qz-1"), CH("千"), ["千字文", "蒙学", "历史"])
-
-E("mengxue-sanzijing", "《三字经》", "汉字·文学", "蒙学", "三字一句，童蒙须知，最普及的国学启蒙。",
-"""《三字经》相传为南宋王应麟所著，是旧时流传最广的蒙书。它三字一句、两句一韵，朗朗上口，幼童不必解意，先能成诵，是“诵读先于理解”的典型东方教法。
-
-全书结构清晰：首言人性本善（“人之初，性本善”），次列伦理、常识、典籍次第，再叙朝代兴亡，终勉好学。短短千余字，却把儒家人伦、自然常识、读书次第、历史纲目一锅炖出——“玉不琢，不成器；人不学，不知义”以治玉喻治学，“融四岁，能让梨”以孔融教谦让，“昔仲尼，师项橐”劝人好学，皆为后世熟悉的典故。
-
-《三字经》的厉害，在把高头讲章压成童谣。它不讲玄理，只给最朴素的规矩与榜样，让伦理在反复吟诵中成为肌肉记忆。它伴随一代代中国孩童开蒙，影响之深，几入集体无意识。
-
-今天我们看《三字经》，宜取其“劝学”“重教”“知礼”的内核，而对其中的等级与性别旧说，则当作历史文本从容辨之。它是一面镜子，照见中国人如何把“成人”之事，从发蒙之际便郑重托付给孩童。""",
-C("三字经", "sze-1"), CH("三"), ["三字经", "蒙学", "历史"])
-
-E("wenxue-tangshi", "唐诗", "汉字·文学", "诗词文赋", "一座不可逾越的诗歌巅峰。",
-"""唐是诗的朝代。据清编《全唐诗》，存世诗近五万首、作者两千余，上至帝王、下至僧道闺秀，皆能吟咏。清人孙洙编《唐诗三百首》，更使它“家弦户诵”，成为中国人共同的文学基因。
-
-唐诗之变，约有四期：初唐陈子昂扫齐梁绮靡，倡“风骨兴寄”；盛唐是黄金时代，李白飘逸（“天生我材必有用”）、杜甫沉郁（“朱门酒肉臭，路有冻死骨”），王维诗中有画、孟浩然清淡自然，高岑悲壮边塞；中唐白居易、元稹掀“新乐府”运动，诗句务求老妪能解，“惟歌生民病”；晚唐李商隐、杜牧则绮丽深沉，余韵苍凉。
-
-体裁上，古体自由、近体严整。近体诗（律诗、绝句）在唐定型：平仄、对仗、押韵皆有法度，字数句式整齐，最见锤炼之功。一首合格的七律，中间两联须对仗工稳，于方寸间见天地。
-
-唐诗不只是文学，更是唐人的精神肖像：有长安的繁华，有边塞的风沙，有田园的悠然，也有乱离的泪痕。它把汉语的音乐性推到极致——今天读来，仍觉口齿生香。无唐诗，中国人的情感表达将失却一半的华彩。""",
-C("文心雕龙", "wxd-2"), CH("诗"), ["唐诗", "诗词", "历史"])
-
-E("wenxue-songci", "宋词", "汉字·文学", "诗词文赋", "长短句里的婉约与豪放。",
-"""词起于隋唐，盛于两宋，本是与音乐相配的“曲子词”，句式长短错落，故又称“长短句”。它脱胎于诗，却因依声填词、更宜抒写幽微心曲，终成与唐诗并峙的另一座高峰。
-
-宋词有“婉约”与“豪放”两派之分，虽非截然，却大略可见。婉约以柳永、李清照为代表，柳七“杨柳岸晓风残月”写离情缠绵，易安“寻寻觅觅，冷冷清清”诉孤寂凄清，情致深婉、吐属细腻。豪放则推苏轼、辛弃疾：东坡“大江东去，浪淘尽，千古风流人物”旷达超迈，稼轩“醉里挑灯看剑”悲慨沉雄，把词境从闺阁推向江山历史。
-
-词在宋，是真正的“流行音乐”。柳永词“凡有井水饮处，皆能歌柳词”；苏轼以诗为词，打破“词为艳科”的成见；周邦彦精于音律，格律严密。南宋偏安，爱国词勃发，辛、陆（游）、张（炎）皆以词写家国之痛。
-
-词之美，在它的“要眇宜修”——于参差句读间，藏不尽低回。它证明：汉语不仅能铺排壮阔，也能在长短顿挫里，把人心最细的褶皱一一抚过。""",
-C("诗经", "shijing-qin"), CH("词"), ["宋词", "诗词", "历史"])
-
-E("wenxue-chuci", "楚辞", "汉字·文学", "诗词文赋", "一份来自荆楚的浪漫与哀愁。",
-"""《楚辞》是继《诗经》之后又一诗歌巨流，因产生于楚地、句式参差错落、多“兮”字叹婉而得名，代表者是屈原。“书楚语、作楚声、纪楚地、名楚物”，它带着浓烈的南方巫风与浪漫主义色彩，与北方《诗经》的写实温厚恰成对照。
-
-屈原是《楚辞》的灵魂。他出身楚之宗亲，辅怀王图强，遭谗见疏，终见郢都陷落，悲愤怀石自沉汨罗。《离骚》是其长篇自传式抒情，“长太息以掩涕兮，哀民生之多艰”写忧国，“路漫漫其修远兮，吾将上下而求索”写求索，《九歌》祀神而情致摇曳，《天问》一口气提出一百七十问，追问宇宙古今。
-
-楚辞意象奇丽：香草美人喻君子，恶禽臭物比小人；湘夫人、山鬼、云中君，皆在巫祭的迷狂里获得诗性生命。它开创的“骚体”，冲破《诗经》四言的齐整，以自由长短句释放情感，直接滋养了汉赋与后世辞章。
-
-端午纪念屈原的传说，更使《楚辞》不独为文学，而成为一种精神符号——那是对故国故土的痴恋，与“虽九死其犹未悔”的操守。读《楚辞》，读的是中国浪漫主义的源头。""",
-C("楚辞", "chuci-01"), CH("辞"), ["楚辞", "诗词", "历史"])
-
-E("wenxue-yueyanglou", "《岳阳楼记》", "汉字·文学", "古文名篇", "不以物喜，不以己悲，士人的千古襟怀。",
-"""《岳阳楼记》是北宋范仲淹应好友滕子京之请，为重修岳阳楼所作。范公并未亲临洞庭，全凭想象与嘱托运笔，却写出了宋人散文的巅峰气度。
-
-文章先叙作记缘起，再铺陈洞庭“衔远山，吞长江”的浩渺，与“霪雨霏霏”和“春和景明”两种截然相反的览物之情——迁客骚人触景生悲或生喜，情随境转。笔锋一转，范公抛出核心一问：那么，古仁人之心又当如何？
-
-答案便是传诵千古的“不以物喜，不以己悲”“先天下之忧而忧，后天下之乐而乐”。他认为真正的士人，当超脱个人得失，以天下为己任——处庙堂则忧其民，处江湖则忧其君。这已不只是写景记楼，而是一篇士人精神宣言。
-
-宋文尚“理”，《岳阳楼记》以景起、以情转、以理结，景情理交融，骈散相间，气势畅达。它把一篇应酬之作，写成了中国读书人人格理想的浓缩。今日重读，那句“先忧后乐”，仍是衡量知识分子担当的最朴素也最沉重的标尺。""",
-C("论语", "lunyu-6"), CH("记"), ["古文", "历史", "闯关"])
-
-E("wenxue-chengyu", "成语源流", "汉字·文学", "古文名篇", "四字之间，藏着一部文化简史。",
-"""成语是汉语最凝练的表达，多为四字，却往往浓缩一段故事、一则典故或一种智慧。它是中国人共同的“文化密码”，听者会心，不必铺陈。
-
-成语之源，多在典籍。出自《诗经》者如“鸠占鹊巢”“投桃报李”；出自《论语》者如“温故知新”“举一反三”“任重道远”；出自《庄子》者如“邯郸学步”“庖丁解牛”；出自《史记》者如“破釜沉舟”“纸上谈兵”。一则成语，常是一则微型历史或寓言——说“草木皆兵”，便想起淝水之战的惊惶；说“塞翁失马”，便引出祸福相依的辩证。
-
-成语之妙，在“意在言外”。它用极简的形式，承载极厚的背景，使交流既经济又有文采。也因其凝定，成语成了文化稳定的锚：纵使口语流变，这些四字格仍把古人的思维方式悄悄传给今人。
-
-当然，成语也会“误读”与流变——“每况愈下”原作“每下愈况”，意思恰反；“空穴来风”本指“有因方来风”，今多用作“无中生有”。读成语，不妨顺藤摸瓜，回到典故本身——那才是汉语最有趣的寻宝游戏。""",
-C("论语", "lunyu-12"), CH("成语"), ["成语", "历史", "闯关"])
-
-E("wenxue-shiji", "《史记》", "汉字·文学", "古文名篇", "史家之绝唱，无韵之离骚。",
-"""《史记》是西汉司马迁所撰纪传体通史，上起黄帝、下迄汉武帝，凡百三十篇、五十二万余字，是中国第一部纪传体通史，开创了“本纪、表、书、世家、列传”五体并行的史书体例，此后“二十四史”皆沿此轨。
-
-司马迁承父志为太史令，欲“究天人之际，通古今之变，成一家之言”。却因替李陵辩护触怒武帝，遭宫刑之辱。他忍死就功名，把个人的血泪炼进笔墨——“人固有一死，或重于泰山，或轻于鸿毛”，正是狱中写给友人的心迹。这种“发愤著书”的精神，使《史记》不仅有史识，更有血性。
-
-《史记》写人极活：项羽“力拔山兮气盖世”的末路悲歌，刘邦的豁达无赖，刺客游侠的肝胆，皆跃然纸上。鲁迅誉之“史家之绝唱，无韵之离骚”，既肯定其体例开创，更激赏其文学笔力——它让历史第一次有了命运与性格的厚度。
-
-“王侯将相宁有种乎！”陈涉垄上的一呼，被太史公郑重写入世家。这种不以成败论英雄、为草莽立传的胸襟，使《史记》超越官修史书，成为中国人理解自身来路的一部伟大叙事。""",
-C("史记", "shiji-1"), CH("史"), ["史记", "历史", "闯关"])
-
-E("wenwen-wenxindiaolong", "《文心雕龙》", "汉字·文学", "古文名篇", "体大思精，中国第一部文章学巨典。",
-"""《文心雕龙》是南朝刘勰所撰的文论巨著，成书于齐梁之际，凡五十篇，体大思精，是中国文学批评的奠基之作。书名“文心”言为文之用心，“雕龙”谓如雕琢龙纹般精研文采。
-
-刘勰以“原道”开篇，提出“文之为德也大矣，与天地并生”——文章之道本于自然，天地万物皆有其文，人“心生而言立，言立而文明”，故人文与天地并生。这一“文源于道”的命题，把文学安放在宇宙秩序之中，格局宏大。
-
-全书结构严密：前二十五篇论文体源流与创作（如《辨骚》《明诗》《乐府》《神思》《风骨》《比兴》），后二十五篇论批评鉴赏与作家因革（“古之评者”部分）。它讲“风骨”要求刚健有力，讲“隐秀”追求含蓄与警拔，讲“通变”主张因革损益——既重法度，又重创新。
-
-在齐梁浮靡文风盛行之时，《文心雕龙》力倡“衔华而佩实”，反对徒事雕琢。它系统总结了中国文学的创作规律与批评标准，影响远及后世诗话、评点。读懂它，便读懂了中国人为何把“文”看得与天地同寿。""",
-C("文心雕龙", "wxd-1"), CH("龙"), ["文论", "历史", "闯关"])
-
-E("wenxue-yuanqu", "元曲", "汉字·文学", "诗词文赋", "市井里的吟唱，俚俗中的锋芒。",
-"""元曲是元代文学的代表，与唐诗、宋词并称，包括“杂剧”与“散曲”两类。杂剧是成熟的戏曲形式，融合唱、念、做、打，关汉卿、王实甫、马致远、白朴谓之“元曲四大家”；散曲则是清唱的诗歌，近似于宋词的市井版。
-
-元曲之兴，与时代密切相关。元蒙统治者停废科举数十年，儒生仕进无门，不少才士沉沦市井，与勾栏瓦舍的艺人相交，遂把文才倾注于戏曲。关汉卿“不伏老”自称“响当当一粒铜豌豆”，写《窦娥冤》哭诉冤屈；王实甫《西厢记》“愿天下有情人皆成眷属”，写尽儿女情长；马致远《天净沙·秋思》“枯藤老树昏鸦”勾勒天涯断肠。
-
-元曲的语言，一扫诗词的典雅矜持，直取市井口语，泼辣鲜活、嬉笑怒骂皆成文章。它敢写权贵的荒淫、小民的辛酸、吏治的黑暗，在俚俗中藏着锋利的现实批判——这是它最动人的地方。
-
-“蒹葭苍苍”的温柔之后，中国文学在元曲里学会了说人话、道民间疾苦。它提醒我们：真正的文学，从不只在象牙塔里，更在勾栏瓦舍的喝彩与泪光之中。""",
-C("诗经", "shijing-caoxu"), CH("曲"), ["元曲", "诗词", "历史"])
-
-E("wenzi-yanbian", "汉字演变", "汉字·文学", "字源流变", "甲金篆隶草楷行，一字千年形变神连。",
-"""汉字并非一成不变，而是沿着一条清晰的脉络层层演进，大体可分七体：甲骨文、金文、大篆、小篆、隶书、草书、楷书（辅以行书）。每一次“字体革命”，都与书写材料、时代效率需求紧密相连。
-
-商代契于龟甲兽骨的文字，便是“甲骨文”，刀痕瘦硬、象形浓重；周代铸于青铜彝器的称“金文”，线条圆浑、渐趋规整；战国“大篆”各国异形，秦并天下后“书同文”，李斯以“小篆”统一字形，线条匀圆、结构对称，是古文字的总结。
-
-真正的转折在“隶变”：秦简、汉隶把圆转的篆笔破为方折，汉字由此脱离“图画”，成为符号——这是古今文字的分水岭。魏晋楷书定型，横平竖直、可作楷模；草书纵任奔逸，行书介乎楷草之间，流便易写。七体递嬗，形貌屡变，而“形声相益”的构造逻辑一以贯之。
-
-汉字演变的奇妙，在于“形变而神连”：我们今日写的楷书，仍能溯到三千年前的甲骨。一条不曾中断的文字血脉，正是中华文明生生不息的物证——它让今人读古书，犹能识其字、通其情。""",
-C("说文解字", "sw-1"), CH("甲"), ["汉字", "字源", "历史"])
-
-print("文学已载入，current entries =", len(entries))
-
-# ============ 节俗·时令 (12) ============
-E("jieqi-chunfen", "春分", "节俗·时令", "二十四节气", "昼夜均分，寒暑相平，仲春之中。",
-"""春分是二十四节气的第四个，约在公历三月二十日前后。此时太阳直射赤道，全球昼夜几乎等长，“分”即均分之意——古人称“日夜分”，又因居于立春与立夏正中，平分了春季，故谓之“春分”。一过春分，北半球白昼渐长，寒气退、暖意生，正是“仲春”之半。
-
-古人观察物候极细。《月令七十二候集解》记春分三候：“一候元鸟至，二候雷乃发声，三候始电。”元鸟即燕子，春分前后自南方归来衔泥筑巢；春雷始鸣，闪电初现，天地间阳气破土而出，万物拔节生长。农谚说“春分麦起身，一刻值千金”，冬小麦返青起身、江南早稻浸种育秧，都赶在这个节骨眼上，误一刻便误一季。
-
-春分的民俗大多围绕“平衡”二字。最有趣的是“竖蛋”：择一枚匀称的新鲜鸡蛋，在桌面上轻手竖起，据说春分这天昼夜均、阴阳平，蛋最容易立住，故有“春分到，蛋儿俏”之说。岭南一带有吃春菜的讲究，采田间野苋与鱼片滚汤，名曰“春汤”，取“家宅安宁、身壮力健”的口彩；北方则多在此时踏青放风筝。
-
-历史上春分还是庄重的祭日。《礼记》有“祭日于坛”之制，帝王春分朝日、秋分夕月，北京的日坛便是明清皇帝春分祭日的场所。一个节气兼有农事、游艺与祀典三重身份，可见先民对“时”的敬重：顺四时而动，便是最朴素的生存节律。""",
-C("千字文", "qz-2"), ST("春分", "🌓", "spring"), ["节气", "仲春", "物候", "民俗", "养生"])
-
-E("jieqi-qingming", "清明", "节俗·时令", "传统节日", "气清景明，慎终追远，踏青插柳。",
-"""清明是二十四节气中唯一兼为重大节日的一个，约在公历四月五日前后。《岁时百问》解释得直白：“万物生长此时，皆清洁而明净，故谓之清明。”作为节气，它标志气温回暖、雨量增多，正是“清明前后，种瓜点豆”的春耕关键期；作为节日，它的身世却颇为曲折——今天的清明，实际上是三个古老节日融合的产物。
-
-其一是寒食节。相传春秋晋文公为纪念焚身绵山的介子推，下令此日禁火冷食，后世寒食扫墓成俗；因寒食紧邻清明，唐代已将扫墓假期连并，宋以后寒食渐被清明吸收。其二是上巳节，即农历三月初三，古人临水祓禊、踏青宴游，“曲水流觞”的兰亭雅集便在上巳。这两股水流汇入清明，使它同时容纳了两种看似相反的情感：一面是慎终追远的哀思，一面是春日郊游的欢愉。
-
-于是清明的习俗也是双面的：扫墓培土、焚楮供飨、去除坟头杂草，是“追远”；踏青、插柳、放风筝、荡秋千、蹴鞠，是“迎新”。古人在祭扫归途折柳插于门楣鬓边，取柳树易活之意，寓生生不息；放风筝至高处剪断丝线，谓之“放晦气”。杜牧一句“清明时节雨纷纷，路上行人欲断魂”，写尽了这个节日的湿润与惆怅。
-
-生与死在清明温柔相接：告慰逝者，也惜取春光。中国人的生死观不尚玄谈，就藏在这一年一度的仪式里——不忘来处，才走得踏实。""",
-C("论语", "lunyu-20"), ST("清明", "🌿", "spring"), ["节日", "祭祀", "踏青", "民俗", "诗词", "历史"])
-
-E("jieri-duanwu", "端午", "节俗·时令", "传统节日", "龙舟竞渡，角黍寄情，追念屈原。",
-"""端午在农历五月初五，又称端阳、重午、天中节。“端”是开端之意，“午”通“五”，五月的第一个五日，故名端午。它是我国首个入选联合国教科文组织人类非物质文化遗产的节日，其源流至少有三条线索交织。
-
-最深的一层是上古的“恶月”禁忌。仲夏五月，暑毒并起、瘟疫易生，先民视之为“恶月恶日”，于是采药沐兰、悬艾插蒲、佩香囊、系五彩丝、饮雄黄，处处是驱瘟避毒的巫术遗意——艾草与菖蒲气味辛烈，古人以其形似剑戟，悬于门户如卫士守门。第二条线索是吴越先民的龙图腾祭：以舟竞渡本是祀龙之仪，闻一多考证端午原是“龙的节日”。第三条，也是流传最广的一条，是纪念战国诗人屈原——公元前278年郢都陷落，屈原怀石自沉汨罗，百姓争棹往救、投饭入江以饲鱼虾，遂演为龙舟竞渡与包粽之俗。
-
-粽子古称“角黍”，以菰叶裹黍成牛角状，本是祭祀的礼器造型；后世南咸北甜、火腿豆沙各擅胜场，成了最有烟火气的节令食物。龙舟则把纪念化作竞技：鼓声一响，百桨齐飞，齐心才能破浪，这本身就是一课。
-
-一个节日，把卫生防疫的古老智慧、龙舟竞渡的集体精神与一位诗人“虽九死其犹未悔”的风骨包在一起，年年五月重温——这正是端午最耐咀嚼的地方。""",
-C("楚辞", "chuci-02"), ST("端午", "🐉", "summer"), ["端午", "龙舟", "屈原", "民俗", "成语", "诗词"])
-
-E("jieri-zhongqiu", "中秋", "节俗·时令", "传统节日", "月圆人圆，赏月尝饼，寄远思乡。",
-"""中秋在农历八月十五，因恰值三秋（孟秋、仲秋、季秋）之半而得名，又称月夕、仲秋节、团圆节。它的来历要从“祭月”说起：《周礼》已有“中秋献良裘”“秋分夕月”的记载，帝王春祭日、秋祭月，本是皇家礼制；到唐代，赏月玩月成为文人风尚，八月十五的明月被反复吟咏；宋代中秋正式成为民间大节，《东京梦华录》写汴京中秋“贵家结饰台榭，民间争占酒楼玩月”，通宵达旦。
-
-中秋的核心意象是“圆”。天上月圆，人间求团圆——远行的人要赶在这一晚归家，归不得的便“千里共婵娟”。月饼由祭月供品演化而来，圆形取团圆之意，明代已有中秋馈赠月饼的记载，切饼须按人数均分，在外未归者也要留下一份，这份讲究里全是人情。此外各地又有赏桂、饮桂花酒、燃灯、观潮（钱塘江大潮恰在中秋前后）、广东的“树中秋”、福建的博饼等风俗。
-
-民间传说也为中秋添了三分清冷的诗意：嫦娥奔月、吴刚伐桂、玉兔捣药，都住在那轮月亮里。苏轼《水调歌头》把这一切收束成千古一问：“明月几时有？把酒问青天。”又自己作答：“人有悲欢离合，月有阴晴圆缺，此事古难全。”
-
-月缺月圆本是自然，聚散离合却见人情。中秋不讲占卜，只讲人伦——它把中国人对“家”的全部想象，安放在一年中最亮的一轮满月上。""",
-C("楚辞", "chuci-03"), ST("中秋", "🌕", "autumn"), ["中秋", "团圆", "赏月", "诗词", "民俗"])
-
-E("jieri-chunjie", "春节", "节俗·时令", "传统节日", "岁首更始，守岁纳福，万象更新。",
-"""春节即农历新年，俗称过年，是中华民族最隆重的传统节日。它由上古岁首的祈岁祭祀演变而来：甲骨文中“年”字像人负禾之形，本义是谷物成熟——庄稼一年一熟，“年”遂成为时间单位，庆丰收、祭祖先、祈来岁，便是过年最古老的内容。汉武帝太初元年改历，正式以夏历正月初一为岁首，此后两千余年，年节的框架大体未变。
-
-过年其实是一整套时间仪式，从腊月延展到正月十五。腊月二十三（或二十四）祭灶“送灶王爷上天”，此后扫尘除旧、备办年货；除夕贴春联、贴年画、挂灯笼，全家围坐吃年夜饭——北方守着饺子（取“更岁交子”之意），南方多有年糕（谐“年年高”）与鱼（“年年有余”）；饭后长辈给压岁钱，旧俗以红绳串钱压祟驱邪，“祟”“岁”谐音，遂成“压岁”。子夜守岁、爆竹声声，传说是为了惊走食人恶兽“年”，实则是以喧腾的声响与彻夜的灯火，郑重送别旧岁。
-
-初一着新衣、出门拜年，初二回娘家，一路热闹到元宵灯节，年才算过完。红色是春节的主调——春联、灯笼、红包，皆取驱邪纳福之意。而春节的内核归结起来是一个“更新”字：以一顿团圆饭凝聚家族，以一句“新年好”重启关系，以扫尘、新衣、爆竹完成对时间的辞旧迎新。""",
-C("千字文", "qz-1"), ST("春节", "🧧", "winter"), ["春节", "守岁", "民俗", "历史"])
-
-E("ershisi-jieqi", "二十四节气", "节俗·时令", "二十四节气", "仰观天象，俯察物候，时间的诗意刻度。",
-"""二十四节气是华夏先民仰观天文、俯察地理，为农业社会量身定制的“时间刻度”。它把一年依太阳黄道划分为二十四段，每段约十五天，既标气候，也示农时，被誉为“中国的第五大发明”，已列入联合国非遗。
-
-其形成非一日之功：先秦已有二分二至（春分秋分、夏至冬至）的概念，至西汉《太初历》正式纳入二十四节气，并配“七十二候”——每气三候，每候五日，以动植物的细微变化（如“桃始华”“雷乃发声”“水始冰”）标示时令流转。节气之名极富画面：“惊蛰”春雷惊起蛰虫，“清明”气清景明，“芒种”忙种谷类，“白露”露凝而白。
-
-节气是农耕的“说明书”：“春雨惊春清谷天，夏满芒夏暑相连……”，一首《节气歌》让农人牢记何时播种、何时收割、何时防暑防寒。它不仅关乎生产，更渗入生活：立春咬春、清明踏青、夏至吃面、冬至数九，节俗因节气而生。
-
-在机械钟表与公历普及的今天，节气依然活着——它提醒我们与自然的连接。当城市人抱怨“四季不辨”时，节气是一份温柔的邀约：抬头看看天，低头问问土，顺着时令去生活，本就是中国人最古老也最智慧的日子哲学。""",
-C("千字文", "qz-2"), ST("节气", "🌾", "cycle"), ["节气", "物候", "农事", "养生"])
-
-E("jieqi-dongzhi", "冬至", "节俗·时令", "二十四节气", "日短之极，阳气始生，数九的开端。",
-"""冬至在公历十二月二十一日前后，是二十四节气中极重要的一个。这一天太阳直射南回归线，北半球白昼最短、黑夜最长，“终藏之气，至此而极”，故曰“冬至”。古人视其为阴阳转化的关键节点：过了冬至，太阳北返，白昼渐长，阳气始生，所谓“冬至一阳生”。
-
-正因如此，冬至在古代远比今日隆重，有“冬至大如年”之说。汉代起，冬至是法定假日，百官放假、互相拜贺；帝王于此日祭天于圜丘（北京天坛即承此制），敬天迎阳。民间则“贺冬”：家人团聚、置办饮食、祭祖祈福，仪式近乎过年。
-
-食俗南北各异：北方“冬至不端饺子碗，冻掉耳朵没人管”，相传医圣张仲景以羊肉娇耳汤治冻耳，演化出吃饺子的讲究；南方多食汤圆，取“团圆”“添岁”之意；江南有冬至夜饮“冬酿酒”的旧俗。此后便进入“数九”：“一九二九不出手……”，以九天为一“九”，数至九九，寒尽春回。
-
-冬至的智慧，在于教人“藏”与“待”：阴极而阳生，最暗之时正孕育光明。它不似春节喧腾，却有一份沉静的笃定——知道长夜终有尽头，便能在寒冷里安心地养精蓄锐。""",
-C("千字文", "qz-2"), ST("冬至", "❄️", "winter"), ["节气", "数九", "民俗", "养生"])
-
-E("jieri-qixi", "七夕", "节俗·时令", "传统节日", "星桥鹊驾，乞巧传情，中国人的情人节。",
-"""七夕在农历七月初七，源出上古对自然星辰的崇拜。牵牛、织女本为银河两岸的星宿，早在《诗经·小雅·大东》已见“跂彼织女”“睆彼牵牛”的身影；至汉代，二者被敷演为隔河相望的恋人，又附会“鹊桥相会”的传说，七夕遂成最具浪漫色彩的节日。
-
-节日的女主角其实是“织女”——她被塑造成善织云锦的巧手女神。因而七夕古称“乞巧节”：未婚女子于庭中设香案，陈瓜果，穿针引线向织女“乞巧”，求赐聪慧与女红之艺。“穿针乞巧”“喜蛛应巧”“投针验巧”等游戏，把对技艺的向往化作闺中雅趣。少女们也在此夜悄悄祷祝，求一段好姻缘。
-
-牛郎织女“一年一见”的悲剧底色，使七夕天然带着相思的惆怅。秦观“两情若是久长时，又岂在朝朝暮暮”以旷达化解离愁，成千古绝唱。唐宋之时，七夕已是热闹节庆，市井卖“磨喝乐”泥偶、结彩楼；明清更盛。
-
-今日七夕常被称作“中国情人节”，年轻人在此互赠礼物、表白心意。从星宿崇拜到乞巧女儿节，再到今日的爱情节，七夕的流变，恰是传统节俗在现代社会里“旧瓶装新酒”的生动例子。""",
-C("诗经", "shijing-qin"), ST("七夕", "💕", "summer"), ["七夕", "乞巧", "民俗", "诗词"])
-
-E("jieri-chongyang", "重阳", "节俗·时令", "传统节日", "登高辞青，茱萸菊花，敬老的秋日。",
-"""重阳在农历九月初九。“九”在《易经》中为阳数，两九相重，故名“重阳”，亦称“重九”。秋高气爽，正是辞青登高的好时节，这一节日因而洋溢着疏朗的秋意与澄明的心境。
-
-登高是其核心习俗：携酒佩萸，登临远眺，既避灾祛厄（相传桓景从费长房学，九日举家登山避祸），也畅抒胸臆。王维“独在异乡为异客，每逢佳节倍思亲。遥知兄弟登高处，遍插茱萸少一人”，把重阳的思亲写成了千古绝唱。赏菊、饮菊花酒、食重阳糕，亦取其“长久”之谐——菊傲霜而开，最宜重阳。
-
-重阳亦是“敬老”的节日。1989年起，我国将农历九月初九定为“老人节”“敬老节”，古老的避灾之日，被赋予尊老爱老的新义。这层转化不惟巧合：秋之成熟，本就象征人生的沉稳与睿智，敬重长者，亦敬重岁月沉淀的智慧。
-
-从驱邪的巫俗，到登高的雅集，再到今日的敬老节，重阳的演变映出中国人处理“传统”的典型方式：旧仪可依，新义可赋，一层层叠加，便成了有厚度的时间。""",
-C("楚辞", "chuci-03"), ST("重阳", "🍂", "autumn"), ["重阳", "登高", "敬老", "诗词", "民俗"])
-
-E("jieri-laba", "腊八", "节俗·时令", "民俗风物", "腊尽春回，一碗粥里的年味序曲。",
-"""腊八在农历十二月初八，是春节的“序曲”。古时“腊”本为岁终祭祀百神之名，腊月初八便是重要的腊祭之日；佛教传入后，又附会“佛成道日”的传说——相传释迦牟尼苦修六年，于腊月初八食牧女乳糜而悟道，寺院遂于此日煮粥供佛、分施信众，称“佛粥”“七宝五味粥”。
-
-最深入人心的，是“腊八粥”。它以米、豆、枣、栗、莲、花生、桂圆等杂煮而成，食材愈丰愈见诚心。民谚“腊七腊八，冻死寒鸦”，一岁将尽、天寒地冻之时，一锅热粥最是暖身暖心。北方还有“腊八蒜”——醋泡紫皮蒜，至除夕启封，碧绿酸香，配饺子一绝。
-
-腊八一过，年关将近，“吃过腊八饭，就把年事办”：扫尘、祭灶、备年货次第展开，年的气氛一日浓似一日。一碗粥，既是祭祀的供品、修行的纪念，也是寻常人家对圆满团圆的朴素祈愿。
-
-朱柏庐《治家格言》说“一粥一饭，当思来处不易”，腊八粥恰是最生动的教材——它教人于丰俭之间知惜福，于岁尾年初懂感恩。这碗粥里熬着的，是中国人对日子的郑重。""",
-C("朱子家训", "zz-2"), ST("腊八", "🥣", "winter"), ["腊八", "年味", "民俗", "饮食", "养生"])
-
-E("jieri-zhongyuan", "中元节", "节俗·时令", "传统节日", "慎终追远，七月半的孝亲与慈悲。",
-"""中元节在农历七月十五，民间称“七月半”“鬼节”，与清明、十月朔并称“三大鬼节”。它的身世是三流合一：道教“中元”为地官赦罪之日；佛教“盂兰盆节”源于《盂兰盆经》目连救母的故事，谓于此日设盆供僧，可救度亡亲倒悬之苦；民间则自古有七月祭祖、荐新之俗。
-
-三股水流汇成中元的核心情感——对亡者的追念与慈悲。是日，人家祭祖先、焚楮衣、供瓜果，寺观作盂兰盆会、放焰口超度孤魂；江南水乡有“放河灯”之俗，一盏盏莲花灯顺流而去，喻为亡灵照路。这些仪式不涉恐惧，而是一片“不忍”的柔肠：连无主孤魂，也要在此时得一份温暖。
-
-《礼记》教人“凡为人子之礼，冬温而夏凊，昏定而晨省”，孝亲本在平时；中元则把这份孝推及已故的亲人，乃至普天下亡魂。它体现了中国人“事死如事生”的伦理——逝者并未真正离开，仍在家族的记忆与祭祀里活着。
-
-中元节最动人的，是那份“幽明一理”的温情：在阴阳相隔处，仍为人子人孙留一处可以流泪、可以思念的时空。它不谈轮回果报的玄虚，只讲“别忘了他们”。""",
-C("礼记", "liji-3"), ST("中元", "🪔", "autumn"), ["中元", "祭祖", "民俗", "孝亲"])
-
-E("jieri-longtaitou", "龙抬头", "节俗·时令", "二十四节气", "二月二，龙抬头，春耕与剃头的欢喜。",
-"""“龙抬头”在农历二月初二，又名春耕节、农事节、春龙节。古人观天象，把黄道附近的星宿分为“二十八宿”，分属四象；东方苍龙七宿的角、亢、氐、房、心、尾、箕，冬季隐没地平线下，至农历二月初，角宿（龙角）于黄昏后自东方地平线升起，宛如“龙抬头”，故得此名。
-
-龙在农耕文化里是司雨之神，龙抬头意味着春回大地、雨水渐多，农事即将开场。因而此日重在“劝耕”与“迎春”：北方有“二月二，龙抬头；大仓满，小仓流”的歌谣，农家祀社神、试犁耙，盼一年好收成；南方一些地方引水灌田，称“引田龙”。
-
-习俗亦饶趣：一是“剃龙头”——儿童此日理发，叫“剃喜头”，取龙抬头的吉兆，盼聪明健壮；二是食俗，北方吃春饼（薄如龙鳞）称“吃龙鳞”，吃面条叫“扶龙须”，吃饺子叫“吃龙耳”，把寻常吃食都安上“龙”的名目，满是讨彩的欢喜；三是“引龙回”，以草木灰自井边撒至家厨，谓引龙入室、镇宅辟虫。
-
-从星象到农事，从理发到吃食，龙抬头把仰望星空的浪漫，落进了春耕时节踏踏实实的盼头里。它提醒我们：中国人的节日，从来都连着地里的庄稼与锅里的饭。""",
-C("千字文", "qz-2"), ST("龙抬头", "🐲", "spring"), ["龙抬头", "春耕", "民俗", "节气"])
-
-print("节俗已载入，current entries =", len(entries))
-
-# ============ 艺术·工艺 (13) ============
-E("yishu-shufa", "书法", "艺术·工艺", "书法", "笔墨的舞蹈，中国人最日常也最极致的艺术。",
-"""书法是中国特有的艺术，把实用书写升华为审美的创造。它依托汉字，却不止于“把字写对”——在点画提按、使转呼应之间，写的是技巧，更是性情与气格。
-
-书体沿革清晰：商周甲骨文、金文以刀以铸，质朴浑穆；秦篆（小篆）匀圆整饬，是“书同文”的形体；汉隶“蚕头燕尾”，破圆为方，古今文字由此分野；魏晋楷书（真书）定型，可作楷模；草书纵任奔逸，最能抒怀；行书介乎楷草，“真以点画为形质，使转为情性”。王羲之《兰亭序》被誉为“天下第一行书”，正在于那一份从容蕴藉。
-
-书法重“法”也重“人”。用笔有中锋侧锋、藏露顿挫，结字讲重心疏密，章法求行气贯通。但最高的评价常是“书如其人”——颜真卿《祭侄稿》的悲愤、苏轼的丰腴、米芾的跌宕，字里皆见人格。所谓“技进乎道”，书法是以线条修行。
-
-今天键盘当道，提笔渐少，书法却未死。它从实用退为修养，仍是华人认祖归宗的美学母语。一笔落下，黑白之间，是中国人对节奏、留白与力度的全部直觉。""",
-C("说文解字", "sw-1"), CH("书"), ["书法", "历史", "闯关"])
-
-E("yishu-shuimo", "国画", "艺术·工艺", "国画", "水墨丹青，留白处皆是天地。",
-"""中国画简称“国画”，与书法同源，最核心的审美是“写意”而非“写真”。它不追求光影透视的酷似，而求“气韵生动”——画出对象的神与画者的心。
-
-工具是“文房四宝”：笔、墨、纸、砚。墨分五色（焦浓重淡清），以水驭之，于宣纸渗化出无穷层次；纸尚生宣，吸水晕墨，最宜写意。画法大抵两路：工笔勾勒填染、精微妍丽；写意泼墨点厾、纵情挥洒。山水、花鸟、人物为三大科，其中山水画最盛，承载了中国人“可行可望可游可居”的自然观。
-
-国画讲究“留白”：画水不画水、画云不画云，以无胜有。一幅山水，实处是峰峦林木，虚处是烟岚空冥，虚实相生，方见万千气象。题款钤印也是构图的一部分，诗书画印四位一体，与西方绘画的“满”迥异。
-
-从顾恺之“以形写神”、王维“画中有诗”，到宋元文人画以笔墨写胸臆，国画始终相信：最好的画，是画出看不见的东西——那便是“意境”。""",
-C("文心雕龙", "wxd-2"), CH("画"), ["国画", "历史", "闯关"])
-
-E("yishu-jingju", "京剧", "艺术·工艺", "戏曲", "唱念做打，脸谱乾坤，国粹的百味。",
-"""京剧形成于清代乾隆末年，四大徽班进京后，融汇徽调、汉调、昆曲、秦腔而成，至同光年间鼎盛，与昆曲并称“雅部”余韵，今列联合国非遗，尊为“国粹”。
-
-它是一门综合艺术：唱（皮黄腔）、念（韵白）、做（身段）、打（武戏）四功并举；“生旦净丑”行当分明——老生儒雅、花旦娇俏、净角（花脸）威猛、丑角机趣。最直观的是“脸谱”：以夸张的色块与图案，把人物性格“画在脸上”，红忠紫孝、黑直刚正、白奸蓝猛，一看便知忠奸。
-
-京剧之美在“程式”与“写意”：一桌二椅便是厅堂军帐，挥鞭即骑马、划桨即行船，全凭虚拟动作引观众入戏。唱词文白相间，板眼考究，梅兰芳的“梅派”雍容，程砚秋的“程派”幽咽，各成气象。
-
-它也曾是全民的娱乐：戏园子里品戏、社交两不误。今天虽不再是日常消遣，但《霸王别姬》《空城计》《锁麟囊》等经典，仍在舞台上讲述着忠奸、爱恨与家国。那一声皮黄拖腔里，是中国人千百年的心头波澜。""",
-C("诗经", "shijing-01"), OB("mask", "脸谱"), ["京剧", "戏曲", "历史", "闯关"])
-
-E("yishu-qinghua", "青花瓷", "艺术·工艺", "器物建筑", "白地蓝花，一抹东方的幽蓝。",
-"""青花瓷是釉下彩瓷的代表：在素白瓷胎上以含钴矿料绘纹，罩透明釉后高温一次烧成，出窑便见蓝白相映、清雅明丽。它始于唐（扬州出土的“唐青花”残片为证），成熟于元，鼎盛于明清，尤以景德镇所产为冠。
-
-元代是青花的关键转折。景德镇引进进口“苏麻离青”，发色浓艳、晕散入骨，纹饰繁密宏阔——缠枝莲、云龙、人物故事皆入画，气象雄浑。明代永宣青花用进口料，有“铁锈斑”入胎的质感；成化改用平等青，淡雅柔和；清代康熙青花则“墨分五色”，于一色中见浓淡深浅、层次分明。
-
-青花之妙，在蓝白二色的极简对照：白是留白之静，蓝是笔墨之动，恰合“一阴一阳”的东方审美。它既是日用器皿，也是远销海外的“中国名片”——英语里“china”既是中国也是瓷器，而青花正是西人最熟悉的东方意象。
-
-从郑和船队的贸易瓷，到今日的国礼，青花把中国的蓝，画进了世界的记忆。它不喧哗，却足以代表一种文明的从容与精致。""",
-C("易经", "yj-4"), OB("vase", "青花"), ["青花瓷", "历史", "闯关"])
-
-E("yishu-guqin", "古琴", "艺术·工艺", "器物建筑", "七弦泠泠，士人精神的知音。",
-"""古琴，古称“琴”，二十弦（今通称七弦琴），是中国最古老的弹拨乐器之一，相传伏羲、神农作琴，三千年间始终是文人雅士的必修。它位列“琴棋书画”四艺之首，非为娱人，而为“修心”。
-
-琴制有深意：七弦象七星，十三徽（音位）应十二月加闰；长短三尺六寸五分，合周年之数。演奏称“抚琴”“鼓琴”，指法繁复，讲究“吟猱绰注”的韵味，音色苍古幽远，最宜独处静听。《诗经》已言“窈窕淑女，琴瑟友之”，琴瑟之和，遂成婚姻美满的隐喻。
-
-古琴文化在“知音”：伯牙子期“高山流水”的典故，把音乐升华为精神相契的象征。嵇康临刑索琴，一曲《广陵散》成绝响，琴于是也承载着骨气与风节。它不求炫技热闹，而求“清微淡远”，与儒家“中正平和”、道家“大音希声”皆相通。
-
-2003年，古琴艺术入选联合国非遗。当都市喧嚣盖过清音，那一张七弦，仍替中国人守着“慢下来、向内听”的一方天地。""",
-C("诗经", "shijing-qin"), CH("琴"), ["古琴", "历史", "闯关"])
-
-E("yishu-yunwen", "纹样寓意", "艺术·工艺", "纹样寓意", "图必有意，意必吉祥。",
-"""中国纹样是“会说话的图案”。从彩陶的鱼纹、青铜的饕餮，到织锦的缠枝、瓷器的大雅，先民把祈愿与宇宙观，密密缝进日用之物。一句行话说得好：“图必有意，意必吉祥。”
-
-寓意多在“谐音”与“象征”。蝙蝠谐“福”，五只蝙蝠绕寿字便是“五福捧寿”；鹿谐“禄”，鹤喻长寿，松竹梅为“岁寒三友”，莲与“连”、鱼与“余”相谐，便有“连年有余”。龙凤是皇权与祥瑞，牡丹富贵，石榴多子，暗八仙各持法宝——几乎每一笔都有所指。
-
-纹样也讲阴阳秩序：旋纹、云雷纹回环往复，是“一阴一阳”的视觉化；缠枝莲生生不息，宝相花庄重圆满。它们不是随意的装饰，而是把“天人合一”“生生不已”的信仰，变成看得见、摸得着的图式。
-
-读懂纹样，便读懂了中国人如何把抽象的好运，具象成身旁的花草鸟兽。一件器物，因了这些纹样，便不只是物件，而是一句祝福、一段世界观。""",
-C("易经", "yj-4"), OB("cloud", "云纹"), ["纹样", "历史", "闯关"])
-
-E("yishu-yuanlin", "园林", "艺术·工艺", "器物建筑", "虽由人作，宛自天开。",
-"""中国园林与西方规整的几何园林迥异，崇尚“自然”二字。明末计成《园冶》开宗明义：“虽由人作，宛自天开”——最高的境界，是让人看不出人工的痕迹。
-
-造园要素是叠山、理水、花木、建筑。叠山多用太湖石，“瘦皱漏透”方为上品，一拳代山；理水贵曲折，一勺代水，讲究聚散有无。廊、亭、榭、舫随势点缀，借景、对景、框景诸法，把园外之景“借”入园中。园林不大，却要在步移景换中见出深意——这便是“壶中天地”。
-
-园林是哲学的物化。庄子说“天地与我并生”，园林便把自然缩微于居所；文人以之寄托“隐居”之思，不出城郭而获山林之趣。苏州拙政园之疏朗、留园之精巧、网师园之小中见大，皆江南私家园林的典范；圆明园、颐和园则见皇家气派。
-
-一方园林，是中国人处理人与自然关系的答案：不是征服，而是栖居；不是占有，而是相与忘机。它告诉我们，最好的建筑，是让人在里头，仍能听见风声与水声。""",
-C("庄子", "zhuangzi-2"), OB("garden", "园林"), ["园林", "历史", "闯关"])
-
-E("yishu-sunmao", "榫卯", "艺术·工艺", "器物建筑", "不施一钉，木与木的咬合。",
-"""榫卯是中国木作的灵魂：在两个构件上分别做出凸出（榫）与凹入（卯）的部分，嵌合即固，不藉钉胶。七千年前的河姆渡遗址已见榫卯，它支撑起了中国所有的木构建筑与家具。
-
-其种类之繁，令人叹服：格肩榫、夹头榫、抱肩榫、楔钉榫、走马销……因部位与受力而异，有的抗拔、有的防震、有的可拆。最负盛名的，是应县木塔、故宫大殿的“斗拱”——层层出挑的木构件，把屋顶的重量巧妙转移，遇震还能“松动”卸力，千百年不倒。
-
-榫卯的智慧，在“以柔克刚”与“天人合一”：木材有伸缩，榫卯留有余地，允许细微的胀缩而不开裂；它顺应木性，而非强扭。明式家具以榫卯取胜，线条简练、结构严谨，至今被奉为经典。
-
-今天钢筋水泥当道，榫卯似已老去。但2010年“中国传统木结构营造技艺”入选联合国非遗，提醒我们：那种“不用一颗钉子也能立千年”的笃定，是一份何等了不起的、与材料讲和的智慧。""",
-C("周礼", "zl-1"), CH("卯"), ["榫卯", "历史", "闯关"])
-
-E("yishu-zhuanke", "篆刻", "艺术·工艺", "书法", "方寸之间，刀笔的金石气。",
-"""篆刻是以刀代笔、在印材（多为寿山石、青田石）上篆写镌刻的艺术，融书法、章法、刀法于一炉，是汉字与雕刻的结晶。它源于实用——春秋战国的印章（古玺）用于封泥信验，秦统一后“玺”“印”制度分明，至汉代已极精美。
-
-文人篆刻兴起于宋元，王冕以花乳石治印，文彭、何震开明清流派，篆刻遂由“工艺”升为“艺术”。一方好印，讲究“篆法”（字法妥帖）、“章法”（疏密呼应）、“刀法”（冲刀爽利、切刀凝涩）——方寸之内，要见笔意，也要见刀痕的“金石气”。
-
-篆刻与书画密不可分：画作题款必钤印，引首押角，朱白相映，既是信记，也是构图。闲章更直抒胸臆，如“一片冰心”“登高望远”，把志趣刻进石头。
-
-它是最“小”的中国艺术，却最见功底——毫厘之间，容不得半点苟且。一刀落下，石屑纷飞，汉字的筋骨与文人的脾气，便都留在了那一方红里。""",
-C("说文解字", "sw-1"), CH("印"), ["篆刻", "历史", "闯关"])
-
-E("yishu-cixiu", "刺绣", "艺术·工艺", "纹样寓意", "针线为笔，丝帛为纸的丹青。",
-"""刺绣是用针线在织物上“作画”的古老工艺，与蚕桑、丝织同源，至迟在商周已见实物。它把绘画的意象，以丝缕的堆叠重现于绸缎，所谓“绚若云霞，细入毫发”。
-
-技法因地域与民族而异：苏绣精细雅洁、双面可观；湘绣善掺针、狮虎生威；粤绣金翠夺目；蜀绣浑厚圆润；苗绣、羌绣则保留浓烈的民族符号。针法更是名目繁多——平针、乱针、打籽、盘金、戗针，各擅其长。一件宫绣龙袍，往往耗时经年，金线盘绕、米珠点缀。
-
-刺绣的题材与纹样一脉：牡丹富贵、鸳鸯和美、莲生贵子、松鹤延年，皆以丝线写吉祥。女子“闺中绣绷”，也把心事与德训绣进荷包、帐幔、嫁衣。它既是日用装饰，也是女性表达的空间。
-
-今天机绣普及，手绣式微，但苏绣等仍列非遗。当一根丝线劈作十六股、在绢上分出浓淡，你会懂得：所谓“女红”，从来都不只是活计，而是中国人以柔顺之物，绣出的万千气象。""",
-C("楚辞", "chuci-03"), CH("绣"), ["刺绣", "历史", "闯关"])
-
-E("yishu-yuqi", "玉器", "艺术·工艺", "器物建筑", "君子比德于玉，温润而坚刚。",
-"""玉在中国地位特殊，远不止美石。《礼记》说“玉不琢，不成器；人不学，不知道”，又把玉的质地比附君子之德：“温润而泽，仁也；缜密以栗，知也；廉而不刿，义也”——玉成了人格的象征。
-
-玉文化贯穿八千年：红山文化的玉龙、良渚文化的玉琮，已见精微的礼器传统；商周以玉礼天、敛葬（金玉在椁）；春秋战国佩玉成风，“君子无故，玉不去身”，行走间环佩叮咚，以节步止躁；汉代“葬玉”完备，玉衣、玉琀求不朽；明清玉雕世俗化，摆件把玩盛行。
-
-治玉极难：玉硬度高，“他山之石可以攻玉”，古人以解玉砂碾磨成形，所谓“琢磨”。和田玉温润、翡翠明艳，各擅胜场。一件好玉，讲究“料、工、意”三者俱佳。
-
-中国人爱玉，爱的其实是那一份“外柔内刚、宁碎不弯”的隐喻。一块石头被赋予了道德，玉便不再只是器物，而成了这个民族对自己最含蓄也最高的期许。""",
-C("礼记", "liji-4"), CH("玉"), ["玉器", "历史", "闯关"])
-
-E("yishu-qiqi", "漆器", "艺术·工艺", "器物建筑", "千文万华，髹饰之工。",
-"""漆器是中国最古老的工艺之一。早在新石器时代的河姆渡，已见朱漆木碗；商周以漆饰礼器，战国秦汉是第一个高峰——曾侯乙墓的漆棺、耳杯，彩绘繁丽、云气流动。
-
-“漆”取自漆树的天然汁液，涂于木胎，阴干成膜，坚牢耐腐、光润如镜。工序极繁：制胎、裱布、刮灰、上漆、打磨、推光，反复数十道；再施以描金、螺钿、雕漆、款彩等装饰——螺钿嵌贝如星，雕漆层叠剔刻，百宝嵌杂宝生辉。一件剔红漆盒，往往髹漆数十层、雕刻成纹，耗时以年计。
-
-漆器之美在“温”与“润”：不同于瓷的清冷、铜的森严，漆器有一种近人的暖光。它曾是贵族日用之奢，也是佛前供具、丧葬明器。唐代金银平脱、宋元素髹、明清果园厂雕漆，各领一时之风。
-
-“七千年的手艺，一国之华彩。”今天天然漆被化学漆取代，传统髹饰渐稀，但那份“千文万华”的耐心，仍是中国工艺精神的注脚。""",
-C("诗经", "shijing-07"), CH("漆"), ["漆器", "历史", "闯关"])
-
-E("yishu-bingmayong", "兵马俑", "艺术·工艺", "器物建筑", "泥土塑出的帝国军团。",
-"""兵马俑是秦始皇陵的陪葬俑坑，1974年于陕西临潼意外发现，被誉为“世界第八大奇迹”。数千陶俑列阵如生，重现了秦军横扫六合的赫赫声威。
-
-俑以陶土模制、分件塑就，再入窑火烧，高约1.8米，与真人身量相仿。最惊人的是“千人千面”：兵俑的眉眼、须发、表情各各不同，甲士、弩手、骑兵、将领装束有别，连鞋底的针脚都一丝不苟——可见秦代“物勒工名”的严密制度。
-
-它背后是秦的军国机器：军阵严整、兵种配合，折射出商鞅变法后“奖励耕战”所锻造的动员力。以俑代人殉，也标志着从商周残酷的人殉，向象征性随葬的进步。
-
-1987年，秦始皇陵及兵马俑列入世界遗产。泥土本无言，却因这八千“将士”的沉默列队，让两千年后的我们，仍得以窥见一个帝国怎样以泥土与纪律，把自己铸进历史。""",
-C("周礼", "zl-1"), CH("俑"), ["兵马俑", "历史", "闯关"])
-
-print("艺术已载入，current entries =", len(entries))
-
-# ============ 衣食·礼制 (13) ============
-E("liyi-guanli", "冠礼与笄礼", "衣食·礼制", "礼节", "男子二十而冠，女子十五而笄，成年的加冕。",
-"""冠礼是古代男子的成年礼，《礼记》定为“男子二十而冠”。仪式上，将冠者依次加缁布冠、皮弁、爵弁三冠，每加一次，祝辞勉励其担起相应责任；再取“字”，自此侪于成人，可行婚礼、入仕途、主祭祀。“冠者，礼之始也”，冠礼是“礼”的起点。
-
-女子相当者为“笄礼”：女子十五岁盘发插笄，表示许嫁成年，故女子十五称“及笄”。笄礼较冠礼简略，却同样意味着从“闺中”走向“为人妻母”的人生新阶段。
-
-成年礼的深层意义，在“责成人之道”：冠不是装饰，而是责任的加冕——从此要以成人的标准律己，承担对家族、乡里、国家的义务。《礼记》说“凡人之所以为人者，礼义也”，而礼义自冠始。
-
-今天学校多行“十八岁成人礼”，虽非古仪，精神却一脉：在一个庄严的仪式里，让年轻人意识到“我长大了他者对我有了期待”。冠笄之礼提醒我们，成长需要被郑重地“看见”。""",
-C("礼记", "liji-1"), CH("冠"), ["冠礼", "礼节", "历史"])
-
-E("liyi-hunli", "婚姻六礼", "衣食·礼制", "礼节", "纳采问名，执子之手，中国人的嫁娶之仪。",
-"""婚姻在古人视为“大事”——“上以事宗庙，下以继后世”，不仅是两情相悦，更是家族的延续。周代即形成“六礼”的完备程序：纳采（遣媒提亲）、问名（问女方姓名生辰）、纳吉（卜得吉兆定亲）、纳征（下聘礼，亦称“完聘”）、请期（择定婚期）、亲迎（新郎迎娶）。
-
-《诗经》“窈窕淑女，琴瑟友之”“执子之手，与子偕老”，是先秦婚恋最动人的底色。后世礼制渐繁：唐《开元礼》规范士庶婚礼，宋代理学强调“嫁娶之礼，所以养廉耻”，明清更重门当户对与仪式排场。新娘凤冠霞帔、跨火盆、拜天地高堂，新郎披红插花、骑马来迎，皆是这套程序的生动片段。
-
-“父母之命，媒妁之言”常被今人诟病，确有其压抑个性的一面；但传统婚礼也重在“敬”与“重”——以郑重仪式，把两个家族、两代人的承诺，牢系于天地祖宗之前。
-
-今天婚礼中西杂糅，古仪多成点缀；但“拜高堂”“交杯酒”里，仍藏着中国人对婚姻“长久、敬重、有始有终”的朴素信念。""",
-C("诗经", "shijing-qin"), CH("婚"), ["婚礼", "礼节", "历史"])
-
-E("liyi-zuoci", "座次与揖让", "衣食·礼制", "礼节", "席不正不坐，中国人的空间秩序。",
-"""古人极重座次，因为“位”就是“序”——它标示着长幼、尊卑、亲疏的秩序。《论语》记“席不正，不坐”，并非洁癖，而是对“礼”的敬畏：方位不正，则伦序乱。
-
-堂上之礼，最典型的是“南面”为尊——君主、宾主坐北朝南；室内则“东向”为尊（秦汉前以右为尊、以东向为最）。宴饮、朝会、家宴，座次皆有定规：长辈上座、客居西席、子弟隅坐随行。错了一席，便是失礼。
-
-与座次相连的，是“揖让”之容：拱手弯腰曰“揖”，推手相让曰“让”。作揖有武揖、土揖、时揖之分，因对象而异，是古人不握手时代的“肢体语言”，表达的是恭敬与谦退。《礼记》言“礼尚往来。往而不来，非礼也；来而不往，亦非礼也”，揖让正是这“往来”的姿态。
-
-座次与揖让，今人看来繁文缛节，实则是把“尊重”空间化、动作化。它让无形的伦理，变成看得见、做得到的日常。今日虽不必拘泥方位，但那份“让人、敬人”的从容，仍值得保留。""",
-C("礼记", "liji-2"), CH("礼"), ["座次", "礼节", "历史"])
-
-E("liyi-bihui", "相见与聘礼", "衣食·礼制", "礼节", "币帛为贽，礼尚往来。",
-"""古代人际交往，初次相见必执“贽”（见面礼），以示郑重。《礼记》详列：天子以鬯（酒）、诸侯以圭、卿以羔、大夫以雁、士以雉、庶人以鹜（鸭）。所执之物各有寓意——羔取其群而不党，雁取其候时而行，皆喻德行。
-
-“币帛”是礼品的通称。聘问之礼，使节往来必携币帛为信；士人拜师、亲友馈问，亦以束脩（十条干肉）、果品、绸帛为礼。礼不在厚薄，而在“称”（相称）：轻者嫌薄，重者近贿，恰如其分才合“礼”。
-
-核心在“礼尚往来”四字——《礼记》明言“往而不来，非礼也；来而不往，亦非礼也”。礼物是关系的“往来”之物，它维系着人情网络，也划出了“施”与“报”的均衡。中国人重“人情”，根子正在这套互惠的礼数里。
-
-今天见面礼简化，握手、伴手礼取代了执贽，但“来而不往非礼也”仍是人际的潜规则。它提醒我们：关系需要被“礼”不断地确认与回响，疏远，往往始于一次该有而没有的“往来”。""",
-C("礼记", "liji-2"), CH("币"), ["礼节", "历史", "闯关"])
-
-E("jiaxun-zhuzi", "《朱子家训》", "衣食·礼制", "家训门风", "一粥一饭，当思来处不易。",
-"""《朱子家训》全称《朱柏庐治家格言》，明末清初昆山士人朱用纯（号柏庐）所作，仅五百余字，却成旧时家家悬诸中堂的治家箴言。它不像《颜氏家训》那样系统，而是一连串对仗格言，易记易诵。
-
-其训重在“勤”与“俭”：“黎明即起，洒扫庭除，要内外整洁”；“一粥一饭，当思来处不易；半丝半缕，恒念物力维艰”。又重“睦”与“恕”：“家门和顺，虽饔飧不继亦有余欢”；“处事，尤宜含忍退让”。它把儒家的修身齐家，化入洒扫应对的细事。
-
-《朱子家训》的深意，在“家常即道场”：治家不是空谈伦理，而是从早起洒扫、爱惜米缕做起。它教人于最世俗的日子里，守住勤俭、宽厚与感恩——这恰是农耕社会最珍视的家风。
-
-今天读它，不必尽依其“三姑六婆”之类的旧见，但“宜未雨而绸缪，毋临渴而掘井”的先见、“施惠无念，受恩莫忘”的厚道，仍是朴素的处世良方。一部小文，撑起的是中国人“齐家”的理想。""",
-C("朱子家训", "zz-2"), CH("训"), ["家训", "历史", "闯关"])
-
-E("mengxue-dizigui", "《弟子规》", "衣食·礼制", "家训门风", "入则孝，出则悌，童蒙的力行规范。",
-"""《弟子规》清康熙年间李毓秀编撰，原名《训蒙文》，以《论语》“弟子入则孝，出则悌，谨而信，泛爱众，而亲仁，行有余力则以学文”为纲，铺陈少儿日常行为的规范，三字一句、押韵易诵。
-
-全书依次讲“孝、悌、谨、信、爱众、亲仁、学文”：如何事亲（“冬则温，夏则凊；晨则省，昏则定”）、如何待人（“凡出言，信为先”）、如何持身（“衣贵洁，不贵华”）。它把抽象伦理，落进“出必告、反必面”这样的具体动作，便于孩童践履，故旧时私塾多用作蒙养课本。
-
-《弟子规》的价值，在“知行合一”的取向——它不重记诵，而重“力行”，把规矩变成身体习惯。但亦有其时代局限：过分强调顺从，对独立思考与个性有所压抑，今人宜取其“敬长、守信、自约”的内核，而弃其“愚顺”之偏。
-
-家训的功能，从来是给成长一个“扶手”。读《弟子规》，不妨当作一面镜子：哪些规矩仍滋养人心，哪些已成束缚，正可照见我们与传统的辩证关系。""",
-C("弟子规", "dzg-1"), CH("规"), ["弟子规", "家训", "历史"])
-
-E("yinshi-cha", "茶道", "衣食·礼制", "饮食", "一盏清茶，喝的是中国人慢下来的哲学。",
-"""茶发于中国，唐前以羹饮，陆羽《茶经》一出，煎茶立为雅事，茶道雏形乃成。宋人点茶、斗茶成风，明太祖废团改散，冲泡之法始近今日。一片树叶，被中国人喝出了哲学。
-
-中国茶类繁富：绿茶清扬（龙井、碧螺春）、红茶醇厚（祁门、正山小种）、乌龙半发酵（铁观音、大红袍）、白茶素淡、黑茶陈香（普洱）、黄茶闷黄——六大类各有性格。品饮讲究“色香味形”，更讲究“境”与“心”：一人得神、二人得趣、三人得味，瓦屋纸窗、清泉佳器，便是雅集。
-
-茶与禅渊源尤深。“吃茶去”是赵州和尚的公案，禅寺“茶宴”以茶助参；所谓“茶禅一味”，是以一盏清苦，照见本心。它不似酒之狂放，而求清醒中的从容——这正合中国人“和静怡真”的生活美学。
-
-今天奶茶当道，原叶茶式微，但围炉煮茶、茶席雅集的回潮，说明人们仍需要那份“慢”。一盏茶里，是中国人对喧嚣的温柔抵抗：且住，且饮，且看清风过竹。""",
-C("六祖坛经", "zc-1"), OB("tea", "茶"), ["茶", "饮食", "养生"])
-
-E("yinshi-caixi", "八大菜系", "衣食·礼制", "饮食", "一方水土，一方滋味。",
-"""中国饮食素有“菜系”之说，最通行的是“八大菜系”：鲁、川、粤、闽、苏、浙、湘、徽。它们因物产、气候、士习而异，构成一幅滋味斑斓的地图。
-
-鲁菜为北方代表，咸鲜醇厚，善制汤与爆炒，是宫廷御膳的近源；川菜“一菜一格，百菜百味”，以麻辣著称，善用泡椒、豆瓣，味型极丰；粤菜尚清鲜本味，“食不厌精”，海鲜与老火靓汤见长；苏浙菜（淮扬、杭帮）甜咸适中、刀工精细，文气十足；湘菜香辣酸辣，乡土浓烈；闽菜清鲜酸甜，汤路尤佳；徽菜重火功、擅烧炖，咸鲜见长。
-
-菜系背后是地理：近海者鲜，山区者腊，南方米北方面，皆顺物产。更有“治大国若烹小鲜”的烹饪哲学——火候、调和、时序，与为人处世相通。《朱子家训》说“半丝半缕，恒念物力维艰”，饮食里也藏着惜福的训诫。
-
-今天八大菜系早已交融，火锅、小炒遍布城乡。但无论怎么变，中国人对“味”的讲究、对“吃”的郑重，始终是这片土地上最日常也最顽固的乡愁。""",
-C("朱子家训", "zz-2"), CH("食"), ["饮食", "菜系", "养生"])
-
-E("yinshi-kuaizi", "筷子", "衣食·礼制", "饮食", "一双七寸六分，夹起的是文明。",
-"""筷子古称“箸”，是中国人进餐的主要器具，其源甚早——商代已见青铜箸，至迟汉代“箸”已普遍。标准长约“七寸六分”，暗合“七情六欲”，一头圆、一头方，象“天圆地方”。
-
-用筷是门“童子功”，也讲礼数：执箸忌“敲碗”（似乞食）、忌“指人”、忌“插筷于饭”（类祭奠）、忌“当众舔筷”。这些禁忌，把日常一饭，也纳入“礼”的教化。一双筷子的使用，从小训练的是分寸与体面。
-
-筷子背后是农耕文明的智慧：华夏以粒食为主，箸宜夹取米饭、菜肴，与西方刀叉（适应肉食分割）各适其食。它也是“和合”的象征——两根相傍才能夹物，孤则无用，恰似“二人同心，其利断金”的东方伦理。
-
-今日筷子随中餐走向世界，材质从竹木到银漆不一而足。它最微小，却最中国：不靠锋刃分割，而靠两根的默契相与——这或许正是中国人处世哲学的味觉注脚。""",
-C("朱子家训", "zz-2"), CH("箸"), ["筷子", "饮食", "养生"])
-
-E("fushi-hanfu", "汉服", "衣食·礼制", "服饰", "华夏衣冠，不止是衣裳。",
-"""“汉服”指汉民族传统服饰体系，上溯黄帝“垂衣裳而天下治”，下及明末，绵延数千年，以“交领右衽、系带隐扣、宽袍大袖”为基本特征，与今日“汉文化”的认同紧密相连。
-
-其形制有深衣（上下连属，如曲裾、直裾）、上衣下裳（如襦裙）、袍服等；历代演进：汉之曲裾飘逸，唐之襦裙开放明丽，宋之褙子清雅，明之马面裙端方。衣不只是遮体，更是“礼”的载体——衣冠制度辨等级、明身份，《礼记》以“礼尚往来”规范人际交往，衣冠正是“礼”最直观的展演。
-
-“华夏”二字，本就与衣冠相关（“有礼仪之大故称夏，有章服之美谓之华”）。改易衣冠，在古代是“易服色、改正朔”的政权象征，故衣冠之辨，关乎文化认同。
-
-近年“汉服运动”兴起，年轻人重穿传统服饰、行礼仪，不必视作复古，而应看作对“我们是谁”的一次温柔确认。衣裳之下，是一个民族对美的记忆与自尊。""",
-C("礼记", "liji-2"), OB("robe", "深衣"), ["汉服", "服饰", "历史"])
-
-E("liyi-sangji", "丧祭之礼", "衣食·礼制", "礼节", "慎终追远，民德归厚。",
-"""丧祭之礼，是古“五礼”（吉凶军宾嘉）中的“凶礼”，却最见一个民族的温情。《论语》叹“慎终追远，民德归厚矣”——认真送别逝者、诚敬祭祀祖先，社会风气便会淳厚。
-
-丧礼有节：初终、小敛、大敛、殡、葬、虞、卒哭，环环相扣；子女“丁忧”守制二十七个月，解官去职，以尽哀思。祭礼则分家祭、墓祭、庙祭，四时荐新、岁时扫坟，把“不忘”化作年复一年的仪式。《礼记》描绘“大道之行也，天下为公”的大同，其落点正在“人不独亲其亲，不独子其子”的伦理扩展——由亲及疏，由生及死。
-
-“事死如事生”是核心信念：逝者并未真正离开，仍在家族的记忆里活着。中元、清明、寒衣诸节，都是这信念的节俗表达。
-
-今天丧祭多从简，繁文缛节不必尽复；但那份“不忘来处”的诚敬，仍有价值。它让生命在代际之间获得延续感——我们记得他们，正如期望后人记得我们。""",
-C("礼记", "liji-1"), CH("祭"), ["丧祭", "礼节", "历史"])
-
-E("fushi-dengji", "服饰等级", "衣食·礼制", "服饰", "衣冠有等，章纹辨尊卑。",
-"""中国传统服饰，从来不只是美丑，更是“秩序”的可见符号。自周代“垂衣裳而天下治”，衣冠即与礼制绑定：什么人穿什么颜色、什么纹样、什么材质，皆有定规，僭越便是“非礼”。
-
-最典型的是“品色衣”与“章纹”：唐代三品以上服紫、五品以上绯、六品以下绿青，世人以“赐紫”为荣；明代“补子”制度，文官绣禽（一品仙鹤、二品锦鸡）、武官织兽（一品麒麟、二品狮），一眼可辨官阶。帝王则独占“十二章纹”——日月星辰山龙华虫等十二种图样，象征至高无上的德行与权力。
-
-颜色亦分贵贱：隋代起“黄”为皇家专用，唐律禁臣民服黄；民间多尚青、皂、白。胡服骑射（赵武灵王）、圆领袍（北朝影响）等变革，则显示服饰也随民族交融而流动。
-
-服饰等级今已不存，但其“以衣辨人”的逻辑，仍隐约活在制服、正装文化里。回望，它提醒我们：衣裳从来都是权力的语言，也是文明的胎记。""",
-C("周礼", "zl-1"), CH("衣"), ["服饰", "等级", "历史"])
-
-E("liyi-jiali", "朱子家礼", "衣食·礼制", "家训门风", "冠婚丧祭，居家日用之仪。",
-"""《朱子家礼》是南宋朱熹编纂的一部仪礼手册，把《仪礼》《礼记》中繁复的古礼，简化为士庶可行的“居家五礼”：通礼（祠堂、深衣）、冠礼、婚礼、丧礼、祭礼。它上接经典、下接地气，是宋以后民间礼俗的“操作指南”。
-
-朱熹的用心，在“礼下庶人”：古礼本是贵族专利，他把它翻译成普通人办得起的仪式——一桌一椅、一献一酢皆有定式，使“冠婚丧祭”真正进入寻常人家。祠堂之制、族谱之修、朔望之祭，皆赖此书推行，深刻塑造了后世的宗族社会。
-
-《家礼》的意义，在把“礼”从庙堂请回厅堂。它让家族有了共同的仪式记忆：春祠秋尝、朔望参谒，聚族之心由此凝聚。所谓“齐家”，不只是训诫，更是一套可反复演练的“仪式感”。
-
-今人生活方式大变，自不必照搬古仪；但《朱子家礼》留下的启示依然真切：一个家庭，需要一些庄重而共同的时刻，把分散的个体，重新系成“我们”。""",
-C("朱子家训", "zz-1"), CH("家"), ["家礼", "家训", "历史", "闯关"])
-
-# ============ 加深现有六领域（补充条目） ============
-E("mingjia", "名家", "思想哲学", "名家", "专攻名实之辩的先秦学派，中国逻辑与语言哲学之先声。",
-"""名家是先秦专攻「名实」之辩的学派，以诡辩与逻辑著称，代表为惠施与公孙龙。
-公孙龙提出「白马非马」：白言色、马言形，色形不同，故白马非马——以概念分析挑战常识。惠施偏重「合同异」，强调万物之同。
-名家看似绕口令，实则开了中国逻辑学与语言哲学之先声；其「离坚白」「合同异」之辩，与古希腊智者遥相呼应。
-后世重伦理轻逻辑，名家渐微；但其对概念精准的追求，仍是思想保持清醒的一分养分。""",
-None, CH("名"), ["名家", "名辩", "逻辑"])
-
-E("jingxue", "经学", "思想哲学", "儒家", "训解阐发儒家经典的学问，两千年士人的共同底色。",
-"""经学是训解、阐发儒家经典（诗书礼易春秋）的学问，自汉至清两千年士人的共同底色。
-汉武帝立五经博士，经学入利禄之途；西汉末刘歆倡古文经，东汉郑玄遍注群经、调和今古，经学为之一统。
-经学非死记，而是借经典回应时代：汉儒讲灾异、宋儒讲义理、清儒重考据，同一部经，各代读出不同天地。
-读懂经学史，便读懂了中国读书人如何在「述而不作」中，悄悄完成一次次思想更新。""",
-C("汉书", "hanshu-1"), CH("经"), ["经学", "儒家", "历史"])
-
-E("shixue", "实学", "思想哲学", "儒家", "明清勃兴的经世致用思潮，反对空谈性理。",
-"""实学是明清之际勃兴的思潮，强调「实体达用」「经世致用」，反对空谈性理。
-宋明理学末流流于玄虚，顾炎武、黄宗羲、王夫之倡「天下兴亡，匹夫有责」，颜元、李塨更主「习行」，亲手习农习医，以践履代空谈。
-实学把学问从书斋拉回田间与市井：水利、屯田、兵械、历算，皆可学可用，开了近代实用主义之先声。
-它提醒我们：道理再好，落不到人事上，终是画饼；真知，是在做事中长出来的。""",
-C("传习录", "czl-1"), CH("实"), ["实学", "明清", "经世"])
-
-E("wenzi-shuowen", "《说文解字》", "汉字·文学", "字源流变", "中国第一部系统分析字形、说解字义的字典。",
-"""《说文解字》是东汉许慎编纂的中国第一部系统分析字形、说解字义的字典，收字九千余，首创部首编排法。
-许慎处今古文经争之际，以「六书」为纲，据小篆字形推溯造字本义，欲「理群类、解谬误、晓学者、达神恉」。
-《说文》之功，在把纷乱的文字收进五百四十部首的秩序里，使后人得以由形知义、由义通道，是读古书、治小学的津梁。
-今天键盘时代，翻翻《说文》，仍能让我们重新「看见」一个字的来路——原来「家」是屋下有豕，「安」是女在宀下。""",
-C("说文解字", "sw-1"), CH("说"), ["说文", "字源", "小学"])
-
-E("hanfu-yuefu", "汉赋与乐府", "汉字·文学", "诗词文赋", "汉代文学的两副面相：庙堂之赋与民间之乐。",
-"""汉赋是铺陈扬厉的文体，枚乘《七发》、司马相如《子虚》《上林》极尽铺排，写帝国气象、苑囿田猎，辞藻富丽如锦绣。
-与赋的「庙堂气」相对，乐府采自民间，「感于哀乐，缘事而发」：《陌上桑》《孔雀东南飞》写情写怨，质朴动人。
-赋重形似与气势，乐府重情真与叙事，一雅一俗，共塑了汉代文学的两种面相，也影响了后世诗词的抒情与写景。
-读汉赋，见大汉的恢弘；读乐府，见小民的悲欢——一文一体，正好拼出那个时代的上下两层。""",
-C("楚辞", "chuci-01"), CH("赋"), ["汉赋", "乐府", "诗词"])
-
-E("biji", "笔记小说", "汉字·文学", "古文名篇", "古人随笔记闻的杂著，最见性情与世相。",
-"""笔记小说是古人随笔记闻的杂著，不重章法，信手而书，却最见性情与世相：《世说新语》写名士风度，《酉阳杂俎》记异闻方物。
-它介于史与文之间：可补正史之缺，可载市井之谈，志人、志怪、考据、随笔，包罗极广，是唐以后文献的一大宗。
-笔记的价值，在「真」与「活」：没有庙堂文章的端架子，多是眼见耳闻的鲜活片段，今人借以窥古人的生活细节与幽微心理。
-若想绕过教科书式的概括、直接贴近古人的生活，笔记小说是最好的窗口。""",
-C("文心雕龙", "wxd-1"), CH("笔"), ["笔记", "小说", "文学"])
-
-E("duilian", "楹联", "汉字·文学", "诗词文赋", "由骈文律诗对仗发展而来的对称文学。",
-"""楹联即对联，由骈文与律诗的对仗发展而来，讲究字数相等、平仄相拗、词性相对、意境相生，多悬于门柱亭台。
-相传起于五代后蜀孟昶「新年纳余庆，嘉节号长春」，至明清大盛；春联、寿联、挽联、名胜联，渗透岁时礼俗与山水人文。
-一副好联，是凝练的诗：岳阳楼「四面湖山归眼底，万家忧乐到心头」，把范公襟怀写尽；名胜联更常与江山互相成就。
-对联是中国人把「对称美学」用到极致的体现——短短数语，既要工稳，又要见性情与机锋。""",
-None, CH("联"), ["对联", "楹联", "文学"])
-
-E("jieri-shangsi", "上巳节", "节俗·时令", "传统节日", "农历三月初三的水边祓禊与春游之日。",
-"""上巳节在农历三月初三，古人于此日到水边祓禊，以兰草沐浴、洗去不祥，谓之「禊饮」。
-魏晋起，上巳与踏青修禊结合，最负盛名者莫过于永和九年王羲之与友「曲水流觞」的兰亭之会，一觞一咏，畅叙幽情。
-上巳是春的节日：迎生机、亲自然、会亲友，后来其祓禊之意渐淡，游春之乐长存，与清明踏青一脉相承。
-今天上巳不算大节，但「三月三」在壮族等民族仍是盛大歌节——古老的春祭，在别处换了活法。""",
-None, ST("上巳", "🌸", "spring"), ["上巳", "节日", "民俗"])
-
-E("jieri-sheri", "社日", "节俗·时令", "民俗风物", "祭祀土地神的春祈秋报之节。",
-"""社日是祭祀土地神「社」的节日，分春社、秋社，春祈丰收、秋报神功，是农耕民族最朴素的感恩仪式。
-《礼记》已载社祭之礼；唐宋社日放假、邻里聚饮，《荆楚岁时记》记其热闹。社鼓、社酒、社肉，是乡民一年里少有的公共欢腾。
-社日连着「乡土」二字：它把分散的农户在同一天聚到社树之下，共敬一方土地，也共温共同体的体温。
-城市化冲淡了社日，但「社」作为基层共同体的隐喻，仍藏在「社会」「公社」这些词里。""",
-C("礼记", "liji-1"), CH("社"), ["社日", "农耕", "民俗"])
-
-E("jieqi-lichun", "立春", "节俗·时令", "二十四节气", "二十四节气之首，一岁农事之起点。",
-"""立春为二十四节气之首，标示春回大地、万物始生，自古视为一年农事的起点，有「一年之计在于春」之说。
-迎春仪式隆重：周代有「迎春于东郊」，后世打春牛、食春饼、咬春（吃萝卜），以种种象征催促春耕、祈愿丰收。
-立春三候「东风解冻、蛰虫始振、鱼陟负冰」，是古人以物候写出的春之三部曲，细腻如慢镜头。
-节气本为农时，立春却最先被赋予「开启」的仪式感——它提醒人：再冷的冬天，也有一个被春天接住的时刻。""",
-None, ST("立春", "🌱", "spring"), ["立春", "节气", "民俗"])
-
-E("lishi-xiashangzhou", "夏商周三代", "历史脉络", "朝代变迁", "中国王朝时代的开端，礼乐文明之奠基。",
-"""夏商周并称「三代」，是中国王朝时代的开端。夏启家天下，开世袭之先；商崇鬼神、信甲骨，青铜与汉字并行成熟；周制礼乐、封诸侯，奠立文化范式。
-西周以分封与宗法维系天下，又以礼乐教化人心；平王东迁后王室衰微，诸侯争霸，进入春秋战国的大裂变。
-三代虽被儒家追为「圣王之治」的理想原型，其真实面貌正由考古（二里头、殷墟、西周甲骨）与文献互证而日渐清晰。
-读懂三代，便读懂了「中国」何以成为中国：祖先崇拜、家国同构、礼乐秩序，根须都扎在这里。""",
-C("禹贡", "yg-1"), CH("夏"), ["三代", "青铜", "历史"])
-
-E("lishi-nanbeichao", "南北朝", "历史脉络", "朝代变迁", "三百年的南北分裂与民族大融合。",
-"""魏晋之后，中国陷入长达三百年的南北分裂：南朝宋齐梁陈偏安江南，北朝魏齐周据守中原，政权更迭如走马。
-分裂的另一面，是空前的人群迁徙与民族融合：北方胡汉杂居、互化，南方蛮越渐附，汉语、礼俗、血统都在重组。
-文化却在离乱中绽放：南朝文学清绮、佛教兴盛；北朝石窟雄浑（云冈、龙门）；最终由隋文帝一统，胡汉之血早已难分。
-南北朝提醒我们：分裂未必是文化的退场，有时恰是新生前的剧烈搅拌。""",
-C("资治通鉴", "zztj-1"), CH("南"), ["南北朝", "分裂", "历史"])
-
-E("lishi-wudai", "五代十国", "历史脉络", "朝代变迁", "唐亡后五十余年的中原易代与藩镇之祸。",
-"""唐亡后五十余年，中原五代（梁唐晋汉周）相代，周边十国并立，武人跋扈、朝秦暮楚，是又一段「乱世」标本。
-藩镇之祸积重难返：兵骄则逐帅、帅强则篡国，天子「兵强马壮者当为之」，纲纪扫地，民生凋敝。
-乱极思治，五代末年周世宗锐意改革、收拾残局；终由赵匡胤陈桥兵变建宋，以「杯酒释兵权」收武人干政之祸。
-五代是唐藩镇病的终章，也是宋文人政治的前奏——它用血泪告诉后人：军权不收，国无宁日。""",
-None, CH("五"), ["五代", "分裂", "历史"])
-
-E("lishi-liaojinxixia", "辽金西夏", "历史脉络", "民族", "两宋并立的北方三朝，多政权共存之局。",
-"""两宋之际，北方并立辽（契丹）、金（女真）、西夏（党项）三朝，与宋长期对峙又互通，构成多政权并存的「大中华」图景。
-它们不同程度地吸收汉制：辽行「南北面官」、金渐用科举、西夏创西夏文并奉儒释，胡风汉制交融，边界远比「华夷之辨」模糊。
-宋与三朝战和往复，澶渊之盟换得百年和平，茶马绢帛往来不绝；最终俱为蒙古所并，族群再次大融汇。
-辽金西夏证明：所谓「正统」非一家独占，中国的历史从来是诸族共同书写的。""",
-None, CH("辽"), ["辽金", "民族", "历史"])
-
-E("yishu-dunhuang", "敦煌石窟", "艺术·工艺", "器物建筑", "丝绸之路上的佛教艺术宝库。",
-"""敦煌莫高窟开凿于前秦，历千余年营造，现存洞窟七百有余，是丝绸之路上佛教艺术的宝库。
-壁画绘满经变、飞天、供养人，色彩历千年仍绚烂；彩塑自北魏的秀骨清像到盛唐的丰腴圆润，写尽审美流变。
-藏经洞（第17窟）出土文书数万，涵汉、藏、回鹘、于阗诸文，是研究中古欧亚的语言与宗教的「天书」库。
-敦煌之美，在它是「在路上」的艺术：西域的凹凸晕染、中原的线描、印度的图像，在戈壁绿洲里熔成一炉。""",
-None, CH("窟"), ["敦煌", "石窟", "佛教"])
-
-E("yishu-qingtong", "青铜器", "艺术·工艺", "器物建筑", "商周礼器与兵器，权力与礼制的物质化身。",
-"""青铜是铜锡铅合金，商周以之铸礼器、兵器与乐器，青铜时代因此得名。鼎簋之属，是权力与礼制的物质化身。
-晚商后母戊鼎重八百公斤，纹饰狞厉神秘；西周毛公鼎铭文近五百字，以铜记事，补史之阙。
-青铜器上的饕餮纹、夔龙纹，既为威吓，亦为通神；「藏礼于器」，一件铜器就是一段被浇铸下来的秩序。
-今天看青铜，那层青绿锈色里，沉着上古中国最庄严的呼吸——礼乐、征伐、祭祀，皆在其中。""",
-C("周礼", "zl-1"), CH("鼎"), ["青铜", "礼器", "工艺"])
-
-E("yishu-tangsancai", "唐三彩", "艺术·工艺", "器物建筑", "唐代低温釉陶，盛唐气象的釉上投影。",
-"""唐三彩是唐代低温釉陶，以黄、绿、白三色为主（实不止三），釉色流淌交融，明丽斑斓，多用于随葬明器。
-题材涵盖俑（胡商、仕女、骏马）、器皿、建筑模型，胡风浓郁——深目高鼻的牵驼俑，正是丝路贸易的写真。
-三彩兴于盛唐，随厚葬之风而盛；安史乱后渐衰，却远播海外，今日本、波斯故地皆有其踪，是唐气象的釉上投影。
-三彩的「俗」与唐画的「雅」、书法的「法」不同，它最接地气：把那个开放、富庶、胡汉杂糅的世俗长安，捏进了泥与火。""",
-None, CH("彩"), ["唐三彩", "陶艺", "工艺"])
-
-E("yishu-wenfang", "文房四宝", "艺术·工艺", "器物建筑", "笔墨纸砚，文人书写的器物与审美。",
-"""笔、墨、纸、砚并称文房四宝，是文人书写的基本器物，亦在长期使用中升华为独立的工艺与审美对象。
-宣笔、湖笔以锋健著称；徽墨「拈来轻、磨来清」；宣纸「纸寿千年」；端砚、歙砚发墨养毫——四者皆讲究，方称得「宝」。
-文房不只是工具：一方砚的眉子纹、一张纸的帘纹、一锭墨的描金，都藏着匠人与文人的共同品味，所谓「器以载道」。
-在数字书写时代，文房四宝退为雅玩；但提笔濡墨的那一刻，人仍能与千年来的书写传统，握在同一管笔里。""",
-C("文心雕龙", "wxd-1"), CH("墨"), ["文房", "笔墨", "工艺"])
-
-E("minju-sihayuan", "中华民居", "衣食·礼制", "服饰", "因地理气候与家族制度而异的居住智慧。",
-"""中华民居因地理、气候、家族制度而异：北方四合院方正闭合、中轴对称，江南粉墙黛瓦、临水而居，闽粤土楼环聚如堡，西南吊脚楼依山悬空。
-院落是宗法空间的投影：四合院「北屋为尊、两厢次之、倒座为宾」，长幼尊卑随屋而定，一进院落就是一部家族伦理。
-选材就地：黄土窑洞、木构干栏、石砌碉房，都是人与环境反复磋磨出的智慧，冬暖夏凉，各有其美。
-民居是「活着的礼制」——它不像典籍那样说教，却把秩序、亲疏、天人关系，悄悄砌进了每日出入的门与窗。""",
-C("周礼", "zl-1"), CH("居"), ["民居", "建筑", "礼制"])
-
-E("liyi-yanxiang", "宴飨之礼", "衣食·礼制", "礼节", "以饮食通伦理的古礼。",
-"""宴飨（乡饮酒、燕礼）是古礼中「以饮食通伦理」的仪式：通过座次、献酬、乐歌，把尊卑、长幼、宾主之序，安放进一场宴席。
-《仪礼》详记燕礼、乡饮酒礼：主人献、宾酢、主人酬，三献而成礼；伴以《鹿鸣》诸诗，饮而有节，和而不流。
-宴飨之用，在「合欢」与「明分」并行：既联络情好，又重申等差，所谓「礼尚往来」，饭桌从来是教化的现场。
-今人聚餐多图热闹，古礼的繁文或可省，但「让座、敬长、不逾矩」的那点温厚，仍是宴席上不该丢的分寸。""",
-C("礼记", "liji-1"), CH("宴"), ["宴飨", "礼节", "饮食"])
-
-# ============ 医药·养生 (14) ============
-E("yi-huangdi", "《黄帝内经》", "医药·养生", "中医源流", "中国最早的医学典籍，中医理论的骨架。",
-"""《黄帝内经》是中国最早的医学典籍，托名黄帝与岐伯问答，实成书于战国至汉，分《素问》《灵枢》两部，奠定中医理论骨架。
-它不教单方，而讲「道」：以阴阳五行释人体，以脏腑经络言生理，以「天人相应」立养生与治病的总纲。
-《内经》最耀眼的命题，是「治未病」——不等生病才治，而在未病先防、已病防变，把医学的关口前移到生活里。
-两千年过去，西医解构人体，中医仍讲整体；重读《内经》，会发现它说的不是药方，而是人如何与天地好好相处。""",
-C("黄帝内经", "nh-1"), CH("医"), ["黄帝内经", "中医", "经典"])
-
-E("yi-jichu", "中医基础", "医药·养生", "中医源流", "阴阳五行、藏象气血：中医看人的底层逻辑。",
-"""中医看人，先分阴阳：气、血、津、液，寒、热、虚、实，皆以阴阳气血的盛衰流转来解释。阴阳失调，便是病之由。
-脏腑不在「形」，而在「象」：心主神明、肝主疏泄、脾主运化、肺主气司呼吸、肾主藏精——五脏各司其职，又相生相制。
-五行（木火土金水）把五脏、五气、五色、五味连成网络，肝木、心火、脾土、肺金、肾水，生克之间便是健康的节律。
-中医的「整体观」常被误读为模糊；其实它是一套以关系而非零件看待身体的智慧——病在一处，往往要调的是全身的关系。""",
-C("黄帝内经", "nh-2"), CH("阴"), ["阴阳", "藏象", "中医"])
-
-E("yi-shanghan", "伤寒论与张仲景", "医药·养生", "中医源流", "辨证论治的范式，方书之祖。",
-"""张仲景，东汉末名医，生逢大疫，「宗族二百余口，建安纪年以来，犹未十稔，其死亡者三分有二」，乃发愤著《伤寒杂病论》。
-《伤寒论》以「六经」辨治外感热病，创立「辨证论治」范式：同病可异治、异病可同治，全在辨明表里寒热虚实。
-此书确立方剂学根基，桂枝汤、麻黄汤等经方沿用至今，被尊为「方书之祖」，仲景也被奉为「医圣」。
-《伤寒论》的价值，在把治病从经验升为方法论：先辨病机、再定治法、后选方药，一以贯之，至今仍是中医的临床心法。""",
-C("伤寒论", "shl-1"), CH("寒"), ["伤寒论", "张仲景", "医典"])
-
-E("yi-bencao", "本草纲目与李时珍", "医药·养生", "本草方药", "集大成的药物学巨著，古代百科全书。",
-"""李时珍（1518—1593），明代医药学家，历时二十七载，三易其稿，成《本草纲目》五十二卷，收药一千八百九十余种。
-他不满旧本草讹误，亲历山野、访农问樵，「渔猎群书，搜罗百氏」，以「纲目」体例（分纲十六、类六十）系统整理药物。
-《纲目》不仅记药性，更及药物辨伪、栽培、炮炙与附方，兼收博物、农事，被誉为「中国古代百科全书」。
-达尔文亦曾参考其记载；2011年入选非遗。李时珍的执着提醒我们：一部好书，往往是用一生「亲见」换来的。""",
-C("本草纲目", "bc-1"), CH("草"), ["本草纲目", "李时珍", "本草"])
-
-E("yi-zhenjiu", "针灸", "医药·养生", "针灸导引", "针与灸的外治法，中医最具标志性的技艺。",
-"""针灸以针（九针）刺穴位、以艾（艾灸）温经络，是中医最具标志性的外治法，渊源可上溯新石器时代的砭石。
-其理在「通」：经络如河，气血周流，病则壅塞；针可疏导、灸可温补，使「气至病所」，恢复营运。
-针灸早走出国门，1979年世卫已认可其对症范围；今在疼痛、瘫康复等领域证据渐丰，成为「传统医学」对话现代科学的桥梁。
-一根细针能调全身，正体现中医「远取诸物、近取诸身」的巧思——不靠药石堆砌，而在激发身体自有的修复之力。""",
-None, CH("针"), ["针灸", "经络", "中医"])
-
-E("yi-jingluo", "经络气血", "医药·养生", "针灸导引", "古人对身体联络系统的关系性建模。",
-"""经络是中医对人体「联络系统」的描摹：经为主干、络为分支，内连脏腑、外络肢节，气血借之以达周身。
-十二正经如江河，奇经八脉如湖泊（任督二脉最著），气血「如环无端」地运行，维持生命的基本节律。
-经络虽难在解剖层面完全对应，却在临床上可反复验证：针刺某穴可治远位之疾，正是经络「表里上下相连」的体现。
-理解经络，关键在放下「实体管道」的执念：它是古人对「身体如何协同运作」的关系性建模，重功能、不重形态。""",
-None, CH("络"), ["经络", "气血", "中医"])
-
-E("yi-qianjin", "千金方与孙思邈", "医药·养生", "中医源流", "集唐以前医方之大成，药王孙思邈。",
-"""孙思邈，隋唐间道士医家，活百岁许，著《备急千金要方》《千金翼方》，集唐以前医方之大成，被尊「药王」。
-他开「脏腑之痈疽」「妇婴专科」之先，重视妇科、儿科，主张「未有娘胎损而能保小儿」的优生优育思想，极超前。
-最动人的是《大医精诚》：医者须「先发大慈恻隐之心」，诊病「不得问其贵贱贫富」，把医德提到与医术同等高度。
-孙思邈以身证「大医」：一生拒官、游走民间、亲尝草木。他留下的不只是方，更是「人命至重，有贵千金」的医道底线。""",
-C("千金方", "qj-1"), CH("仁"), ["千金方", "孙思邈", "医德"])
-
-E("yi-wenbing", "温病学派", "医药·养生", "中医源流", "明清成熟的温热疫邪诊治体系。",
-"""温病学派是明清成熟的中医分支，专攻「温热疫邪」致病，叶天士、吴鞠通、薛雪、王孟英为其巨擘。
-它补伤寒之未备：温热之邪多从口鼻而入、首先犯肺，传变「卫气营血」「三焦」，治法重在清热透邪、保津养阴。
-吴鞠通《温病条辨》仿「伤寒」立「三焦辨证」，与叶天士「卫气营血」相表里，使瘟疫诊治成系统，挽救无数时疫。
-温病学派的兴起，正因明清瘟疫频仍；医学的突破，往往写在苦难的空白处——它让中医在面对急性传染病时，不再只有古方可用。""",
-None, CH("瘟"), ["温病", "瘟疫", "中医"])
-
-E("yi-daoyin", "导引·五禽戏·八段锦", "医药·养生", "针灸导引", "导气引体的传统养生术。",
-"""导引是「导气令和、引体令柔」的养生术，融呼吸、肢体与意念，与今之气功、体操同源，长沙马王堆帛画已见其形。
-华佗据「流水不腐，户枢不蠹」创五禽戏，仿虎鹿熊猿鸟之戏以舒筋活络；后世八段锦、太极拳皆其流裔。
-导引之要，在「形气神」并练：动以行气、静以凝神，不求蛮力，但求松通，最宜日常调身养神。
-它最朴素的道理是：身体要「用」才不锈。每天十几分钟的导引，古人称之为「养」，今人不妨叫它「微运动」。""",
-None, CH("导"), ["导引", "养生", "功法"])
-
-E("yi-siyang", "四时养生", "医药·养生", "养生观念", "春生夏长秋收冬藏，顺天应时。",
-"""四时养生本于「天人相应」：春生、夏长、秋收、冬藏，人的生活起居当随四季节律而调，方合「道法自然」。
-《内经》示以纲领：春夜卧早起、广步于庭；夏无厌日、使气得泄；秋早卧早起、收敛神气；冬早卧晚起、去寒就温。
-饮食亦顺时：春省酸增甘、夏食苦清心、秋润防燥、冬温补藏精；不当令之物少食，所谓「不时不食」。
-养生不是进补，而是「合拍」——把身体调到与天地同频。这份顺应，比任何名贵药材都更根本，也最难坚持。""",
-C("黄帝内经", "nh-3"), CH("养"), ["养生", "四时", "顺应"])
-
-E("yi-shiliao", "食疗", "医药·养生", "养生观念", "药食同源，以膳食调养身体。",
-"""食疗是以食物调养身体的传统，「药食同源」——许多药物本就是食物，许多食物亦能疗疾，谷肉果菜各有偏性。
-孙思邈谓「夫为医者，当须先洞晓病源，知其所犯，以食治之；食疗不愈，然后命药」，把膳食置于汤药之前。
-梨润肺、姜散寒、绿豆解毒、山药健脾，民间「冬吃萝卜夏吃姜」等谚语，皆是食疗经验的口头传承。
-食疗之智，在「平」：不靠峻烈，而以日常饮食的微调理，把健康养在锅碗之间。它提醒：最好的药，或许就在餐桌上。""",
-None, CH("食"), ["食疗", "食养", "养生"])
-
-E("yi-fangyi", "中医防疫", "医药·养生", "养生观念", "正气存内，邪不可干的传统智慧。",
-"""中医防疫古称「避疫」「摄生」，重在「正气存内，邪不可干」——以护正气为本，辅以隔离、熏香、服药防患于未然。
-历代大疫，医家颇多创获：东汉伤寒、明清温病，皆是抗疫中成法；人痘接种预防天花，更早于西方牛痘百年。
-防疫手段朴素而系统：以帛掩口、通风、扫除、煮沸、烧苍术艾叶熏烟，已有「环境消毒」之意。
-回望中医防疫，它不是玄学，而是一套「治未病+隔离+对症」的实践智慧；其「扶正祛邪」的思路，至今仍有启发。""",
-None, CH("疫"), ["防疫", "瘟疫", "中医"])
-
-E("yi-bencao-yaoxing", "本草药性", "医药·养生", "本草方药", "四气五味归经，用药的底层逻辑。",
-"""本草即药物学，「药性」指药物之四气（寒热温凉）、五味（辛甘酸苦咸）、归经与升降浮沉，是用药的底层逻辑。
-四气五味各有所司：辛散、甘缓、酸收、苦坚、咸软；温热药祛寒、寒凉药清热，配伍得当则增效减毒。
-《神农本草经》已分药为上中下三品，后世本草愈丰；炮制（蒸炒炙煅）更改变药性，足见「用对」比「用贵」重要。
-懂点药性，不等于自医，而是多一份对自身与自然的敬畏：一草一木皆有性，人当顺势而用，不可逆性而伤。""",
-C("本草纲目", "bc-2"), CH("药"), ["药性", "本草", "中医"])
-
-E("yi-dayi", "大医精诚", "医药·养生", "中医源流", "孙思邈立下的医德准绳。",
-"""《大医精诚》是孙思邈为医者立下的职业道德准绳，与希波克拉底誓言东西辉映，是中医文化的精神标高。
-它要求医者「无欲无求」「普救含灵」：诊病不论昼夜寒暑、贵贱贫富、怨亲善友，皆当「如至亲之想」，不得「恃己所长，经略财物」。
-「精」指医术精湛，「诚」指心地诚朴，二者缺一不可——无精则救人不力，无诚则虽精亦虐，故曰「大医」。
-医道即仁道。今天技术日新月异，孙思邈那句「人命至重，有贵千金」，仍该是每个行医者案头的第一诫。""",
-C("千金方", "qj-1"), CH("德"), ["医德", "大医精诚", "医道"])
-
-# ============ 科技·发明 (14) ============
-E("keji-sida", "四大发明", "科技·发明", "四大发明", "造纸印刷火药指南针，改变世界的中国技术。",
-"""造纸、印刷、火药、指南针，被培根誉为「曾改变世上一切事物面貌」的发明，经阿拉伯西传，深刻参与了近代世界的成型。
-四大发明之说由来华传教士艾儒略等转述、李约瑟系统阐发；它们多为实用技术，靠匠人经验积累，而非单一天才的灵光。
-其西传路径各异：造纸印刷由阿拉伯入欧，火药经蒙古西征播散，指南针助大航海——中国的「器」，成了世界史的「变量」。
-谈四大发明，不必自矜，也毋庸自卑：它提醒我们，技术要成「文明级」影响，既靠创造，也靠开放与流转的运气。""",
-C("梦溪笔谈", "mxt-1"), CH("器"), ["四大发明", "科技", "闯关"])
-
-E("keji-zaozhi", "造纸术", "科技·发明", "四大发明", "蔡伦改进的造纸术，知识传播的基础设施革命。",
-"""造纸术相传由东汉蔡伦改进：以树皮、麻头、破布、渔网等为料，捣浆抄造成纸，质轻价廉，取代竹简缣帛。
-此前文字载体笨重（一片竹简容字有限）或昂贵（帛），纸的普及使知识得以「下行」，是文明传播的一次基础设施革命。
-造纸术经怛罗斯之战西传阿拉伯，再入欧洲，推动了文艺复兴的知识扩散；「paper」一词即源于丝路驿站的「纸」。
-今天屏幕替代了纸张，但蔡伦的功绩仍在：他把「记录」这件大事，从少数人的特权，变成了人人可及的日常。""",
-None, CH("纸"), ["造纸", "蔡伦", "发明"])
-
-E("keji-yinshua", "印刷术", "科技·发明", "四大发明", "雕版到活字，毕昇早于古腾堡约四百年。",
-"""印刷术始于隋唐雕版，毕昇在北宋创胶泥活字，沈括《梦溪笔谈》详记其法，开活字印刷之先，比古腾堡早约四百年。
-雕版适宜大批量经籍，活字便于灵活排版；明清木活字（武英殿聚珍版）、铜活字相继而行，典籍因此廣布。
-印刷使书籍由抄写走向规模生产，知识传播成本骤降，科举、教育、思想交流随之提速，是「知识民主化」的推力。
-从雕版到活字，再到今日的数字排版，变的只是载体，不变的是「让思想复制得更廉价」这一执念——印刷术是它的第一次飞跃。""",
-C("梦溪笔谈", "mxt-1"), CH("印"), ["印刷", "活字", "发明"])
-
-E("keji-huoyao", "火药", "科技·发明", "四大发明", "源于炼丹，改变战争形态的中国发明。",
-"""火药源于道家炼丹：古人求长生而烧炼丹砂，无意间发现硝石、硫磺、木炭混合物易燃爆，唐末已见军用记载。
-宋代火药武器渐成熟：突火枪、震天雷、火铳相继出现；火药随蒙古西征传入阿拉伯与欧洲，改写了战争形态。
-火药的双刃性自诞生便在：既可开山采矿、制礼花娱人，亦能裂甲破城；技术本身无善恶，用之者定其功过。
-四大发明里，火药最直观地说明：一项中国技术，如何经由战争与贸易，最终重塑了远方的世界版图。""",
-None, CH("火"), ["火药", "炼丹", "发明"])
-
-E("keji-zhinan", "指南针", "科技·发明", "四大发明", "从司南到航海罗盘，大航海的技术支点。",
-"""指南针由先秦「司南」（天然磁勺置铜盘）演进而来；宋人沈括已记人工磁化之法制指南鱼、指南针，用于航海。
-《梦溪笔谈》载「方家以磁石磨针锋，则能指南，然常微偏东，不全南也」——已察地磁偏角，比西方早数百年。
-指南针上船，使远洋航行摆脱「看星辨向」的局限，助郑和下西洋、欧洲大航海，是地理大发现的技术支点之一。
-一根被磁化的钢针，指向的不只是南方，而是一个「敢往未知处去」的时代——方向感，从来都是探索的前提。""",
-C("梦溪笔谈", "mxt-1"), OB("compass"), ["指南针", "司南", "航海"])
-
-E("keji-tianwen", "天文历法", "科技·发明", "天文历法", "观象授时，把星空变成农耕文明的时钟。",
-"""中国天文以「观象授时」为务：新石器已立圭表测影，商代识日食月食，先秦定二十八宿、十二次，体系早熟。
-历法重农时：从阴阳合历的《夏小正》到汉武帝《太初历》、元代郭守敬《授时历》（一年365.2425日，与今公历同精度），精度步步逼近。
-天文亦通政治：「天人感应」下，天象被视为政事的镜鉴，司天监专司观测，浑仪、简仪等仪器臻于精密。
-中国天文的特质，是「实用导向」——不太追究宇宙本质，而务求「不误农时、不悖天象」，把星空变成了农耕文明的时钟。""",
-C("易经", "yj-4"), CH("天"), ["天文", "历法", "科技"])
-
-E("keji-zhangheng", "张衡与仪器", "科技·发明", "天文历法", "浑天仪与地动仪，古代科学家的范本。",
-"""张衡（78—139），东汉科学家、文学家，研制浑天仪（演示天球运行）与地动仪（测地震方位），兼通历算、机械制造。
-浑天仪以漏水转动，星官附丽其上，可验天象；地动仪以八龙衔丸、蟾蜍张口，震来则相应龙机发丸，示震源方向，构思极巧。
-他著《灵宪》论天体结构，主张「浑天说」，测算日食月食、恒星数目，是古代少有的「科学家型」通才。
-张衡的价值，在于把「观测—建模—造器验证」的科学方法，早早在中华土壤上实践了一回——比空谈宇宙，他更信亲手做出来的证据。""",
-None, CH("仪"), ["张衡", "地动仪", "天文"])
-
-E("keji-nongxue", "农学（齐民要术）", "科技·发明", "工农营造", "以农立国的技术体系，顺天量地。",
-"""中国以农立国，农学早熟。北魏贾思勰《齐民要术》是现存最早最完整的农书，十卷囊括耕织、饲养、酿造、贮藏之法。
-其纲「顺天时，量地利」——不违农时、因地制宜，是精耕细作传统的理论凝练；兼采谚语与实操，极重经验验证。
-后世农书踵起：元《王祯农书》及图文、明《农政全书》汇通中西、徐光启亲验引种，农学体系愈备。
-农书里没有玄虚，只有「怎样把地种好」的诚恳；读懂它，便读懂了这个民族为何能把「吃饭」这件大事，做到极致。""",
-C("齐民要术", "qm-1"), CH("农"), ["农学", "贾思勰", "科技"])
-
-E("keji-shuxue", "数学（祖冲之）", "科技·发明", "天文历法", "问题驱动的中国算法传统。",
-"""中国数学重算法实用：《九章算术》立项、粟、衰分等九章，以「术」（算法）解题，影响东亚数学千年。
-南朝祖冲之将圆周率算到3.1415926与3.1415927之间，领先世界约千年；又创「祖暅原理」（体积求积），早于卡瓦列里。
-秦九韶「大衍求一术」（一次同余式）、杨辉三角，皆在世界数学史上占先；算筹、珠算则是独特的运算工具。
-中国数学的特点是「问题驱动」——为丈量、租税、历算而生，少抽象证明。它提醒：数学不止一种面孔，有用，也是一种深刻。""",
-None, CH("数"), ["数学", "祖冲之", "科技"])
-
-E("keji-shuili", "水利（都江堰）", "科技·发明", "水利交通", "因势利导的生态水利范本。",
-"""都江堰是战国李冰父子主持的水利工程，位于成都平原，以「分水鱼嘴、飞沙堰、宝瓶口」三件，化岷江为灌溉之源。
-其妙在「因势利导」：无坝引水、自动分洪排沙，两千余年仍润泽天府，是「道法自然」的工程范本，被誉为生态水利鼻祖。
-此外，灵渠连通湘漓、京杭运河贯通南北、黄河堤防与海塘工程，皆见古人「与水相处」的系统智慧。
-都江堰告诉我们：最好的工程不是征服自然，而是读懂它的脾气，顺势借力——这比「人定胜天」更高明。""",
-None, CH("水"), ["水利", "都江堰", "工程"])
-
-E("keji-yejin", "冶金铸造", "科技·发明", "工农营造", "从青铜范铸到钢铁冶炼的文明筋骨。",
-"""青铜铸造是早期文明的高峰：商周以范铸、失蜡法铸鼎彝，纹饰繁复、器形宏伟，后母戊鼎即其巅峰之作。
-冶铁紧随其后：春秋已铸铁，战国铁农具普及，汉代炒钢、百炼钢，唐宋灌钢法使铁器质优价廉，深刻推动农业与军事。
-《天工开物》系统记冶炼、采煤、铸币诸工，是古代工艺的「技术百科全书」；冶金之进，直接关系国力强弱。
-从一块矿石到一把利刃，冶金史是一部「火与范」的文明史——它把地下的沉默金属，锻成了文明的筋骨。""",
-C("天工开物", "tg-2"), CH("金"), ["冶金", "青铜", "科技"])
-
-E("keji-zaochuan", "造船与航海", "科技·发明", "水利交通", "水密隔舱与罗盘撑起的远洋时代。",
-"""中国造船史悠久：汉代楼船巍峨，唐宋海船「载重致远」，水密隔舱、平衡舵、罗盘，使远洋航行安全可控。
-宋代市舶司管理海外贸易，元明海舶通抵波斯湾；郑和宝船「体势巍然，巨无与敌」，七下西洋，是木帆船时代的巅峰。
-造船之强，撑起海上丝绸之路；指南针上船，更使「落日辨向」成为可能。可惜明清海禁，错失了向深海继续走去的机会。
-船是文明的脚。中国制造过大船，也到过远海；这段航海记忆提醒：开放向海，曾是我们基因里的一部分。""",
-None, CH("舟"), ["造船", "航海", "科技"])
-
-E("keji-yingzao", "建筑科技（营造法式）", "科技·发明", "工农营造", "以材为模数的官方建筑规范。",
-"""《营造法式》是北宋李诫编修的官方建筑规范，三十四卷，以「材分制」为模数，统一大木作、小木作、瓦石诸工，是现存最早最完整的建筑典籍。
-它把经验上升为标准：以「材」为基准单位，依建筑等级定用材等第，使设计、用料、用工皆可算度，杜绝「料例不明」之弊。
-书中的斗拱、举折、侧脚生起等法，成就了中国木构的韵律与柔韧；应县木塔、汴京虹桥，皆其时代的工程骄傲。
-《营造法式》的价值，在让「工匠精神」有了可传的「语法」——建筑不只是艺术，更是一门可被精确传授的科学。""",
-C("营造法式", "yz-1"), CH("营"), ["建筑", "营造法式", "科技"])
-
-E("keji-fangzhi", "丝织", "科技·发明", "工农营造", "一根蚕丝牵动的文明交流线。",
-"""丝织是中国的「原创科技」：相传黄帝元妃嫘祖教民养蚕，考古证实五千年前已有丝织，丝绸由此成为华夏的标识性物产。
-从蚕桑、缫丝到提花，工艺极精：汉锦、唐绫、宋纱、明妆花，纹样繁丽；提花机更是最早的「程序化」织造装置之一。
-丝绸之路因丝而得名，丝绸西输，换回汗血马、香料、宗教与技艺，是一条由「一根丝」牵动的文明交流线。
-一根蚕丝连起农、工、商、贸与世界。丝织提醒我们：最高级的科技，有时就藏在最日常的一匹锦里。""",
-None, OB("silkroad"), ["丝织", "丝绸", "工艺"])
-
-# ============ 地理·民族·军事 (14) ============
-E("diji-jiuzhou", "九州与禹贡", "地理·民族·军事", "疆域山川", "《尚书·禹贡》划定的天下蓝图。",
-"""《禹贡》托名大禹，是《尚书》中的地理名篇，以「九州」（冀兖青徐扬荆豫梁雍）划天下，记山川、土壤、物产、贡道。
-它虽非夏代实录，却是中国「疆域秩序」的最早蓝图：把广土众民纳入一个可治理、可叙述的网格，影响后世两千年政区观念。
-九州之说，由实指渐成文化符号：「九州」成了「中国」的代称，承载着「普天之下」的统一想象。
-《禹贡》的用心，不在精确测绘，而在「定分」——给这片土地一个可理解的结构，让分散的族群，共享同一张版图。""",
-C("禹贡", "yg-1"), CH("州"), ["九州", "禹贡", "地理"])
-
-E("diji-jianghe", "黄河长江", "地理·民族·军事", "疆域山川", "哺育文明的两河，定义中国的南北。",
-"""黄河、长江是中华文明的「两河」：黄河哺育仰韶、龙山诸文化，被称为「母亲河」，却也以善淤善决，磨砺出治水与治国的智慧。
-长江上游巴蜀、中游荆楚、下游吴越，串起稻作、漆器、丝织与园林，自成一脉温润丰饶的文明带。
-两河性格迥异：黄河刚烈多灾、长江迂徐丰润；它们共同定义了中国的南北、冷暖与农事节律，也塑造了南北气质之差。
-读懂两河，便读懂了「水利」为何是中国第一等大事——大禹、李冰、潘季驯，治水的名字，也是治国的名字。""",
-C("水经注", "sj-2"), CH("川"), ["黄河", "长江", "山川"])
-
-E("diji-dayunhe", "大运河", "地理·民族·军事", "交通驿传", "贯通南北的人工输血管。",
-"""大运河始凿于春秋，隋代贯通南北（永济渠、通济渠、邗沟、江南河），元裁弯取直成今日京杭运河，全长逾一千七百公里。
-它是帝国的「输血管」：南粮北运、军需转输、商旅往来，把黄河流域与江南经济区牢牢系在一起，强固了统一。
-运河沿线兴起洛阳、汴京、临清、扬州、杭州等名城，「漂来的城市」之说，道尽其繁华所依。
-大运河是人工的「第二河流」——它证明：在车马慢的时代，一条水道，足以把分裂的版图，重新缝合成一个经济体。""",
-None, CH("运"), ["大运河", "漕运", "交通"])
-
-E("diji-sichou", "丝绸之路", "地理·民族·军事", "交通驿传", "横贯欧亚的文明交流大动脉。",
-"""丝绸之路是汉代张骞「凿空」后形成的横贯欧亚的陆上商道，自长安西出，经河西、西域、中亚抵地中海，以丝帛贸易得名。
-它不止运丝绸：中国的铸铁、漆器、纸张西去，西域的葡萄、苜蓿、胡乐、佛教东来，是名副其实的文明交流大动脉。
-绿洲丝路、草原丝路、西南丝路并行；敦煌、楼兰、撒马尔罕，皆为节点上的明珠，语言、宗教、艺术在此交汇。
-丝路的意义，远超贸易：它让「中国」第一次被世界看见，也让中国第一次看见更广阔的世界——封闭，从来不是我们的本色。""",
-None, OB("silkroad"), ["丝绸之路", "贸易", "交通"])
-
-E("diji-minzu", "华夏与民族", "地理·民族·军事", "民族交融", "以文化而非血统界定的认同。",
-"""「华夏」初指中原诸族，「蛮夷戎狄」环居四方；但「华夷之辨」重文化而非血统——「诸侯用夷礼则夷之，进于中国则中国之」。
-历史上几次大融合：春秋华夷杂处、魏晋北族入主、隋唐胡汉一家、元清异族一统，每一次「外来」，都化入「中华」的肌体。
-今日五十六个民族，是长期迁徙、通婚、互化的结果；语言、服饰、节庆各异，却共享「大一统」「和而不同」的底色。
-中国的「民族观」独特之处，在于以文化而非血统界定认同——这正是它能在辽阔疆域内容纳多样性的根本原因。""",
-C("禹贡", "yg-2"), CH("华"), ["民族", "华夏", "融合"])
-
-E("diji-chama", "茶马古道", "地理·民族·军事", "民族交融", "以叶换蹄的西南命脉。",
-"""茶马古道是西南横断山区的商道网络，汉藏等族以川滇之茶，换高原之马，山间铃响，续接起一条「以叶换蹄」的命脉。
-古道分川藏、滇藏两线，跨怒江、澜沧、金沙，栈道悬于绝壁，马帮踏雪蹈险，是高原民族与内地互通的动脉。
-茶入藏地，解肉食之腻、补维生之需；马下平原，充军驿之乏——一饮一骑之间，是经济互补，更是文化互感。
-茶马古道提醒：中国的统一，不只是行政的，也是日常的——它藏在每一片南方的茶叶，与每一匹北方的骏马相遇里。""",
-C("茶经", "cj-1"), CH("茶"), ["茶马古道", "民族", "贸易"])
-
-E("diji-bingzhi", "兵制演变", "地理·民族·军事", "兵制战事", "兵从哪来、听谁指挥的千古难题。",
-"""兵制即军事制度，关乎「兵从哪来、听谁指挥」。西周「国人出兵」、春秋「族兵」、战国「募兵」「郡县征发」，兵源随时代而变。
-汉代南北军与都试、唐代府兵（兵农合一）转募兵、宋代「养兵弥乱」、明代卫所、清代八旗绿营，各有得失。
-兵制的核心张力，在「强干弱枝」与「外重内轻」之间：唐藩镇、宋积弱、明卫所废弛，皆因兵制失衡而乱。
-读兵制史，读的是「权力如何安放武装」：兵权收则国稳却或弱，兵权放则强却或叛——这道难题，历代都没完全答好。""",
-None, CH("兵"), ["兵制", "军制", "军事"])
-
-E("diji-zhanyi", "著名战役", "地理·民族·军事", "兵制战事", "长平、赤壁、淝水：历史的转折手。",
-"""长平之战（秦赵）坑卒四十万，定秦统一之势；赤壁之火，三分天下；淝水之捷，保江东半壁——战役常是历史的转折手。
-冷兵器时代，胜负在阵形、士气、地形、后勤：背水列阵、火攻、诱敌，都是兵家常用之法；「兵者，诡道也」。
-战役的背后是国力与制度：秦之胜在耕战、蜀之弱在疲敝；一场仗的输赢，往往是几十年积累的集中释放。
-读战役，最忌只看计谋。真正的胜负手，常在那场仗之前就已写好——在谁的农更强、谁的制更顺、谁的民更附。""",
-C("史记", "shiji-2"), CH("战"), ["战役", "军事", "历史"])
-
-E("diji-sunzi", "孙子兵法与谋略", "地理·民族·军事", "兵制战事", "不战而屈人之兵的全胜之道。",
-"""《孙子兵法》为春秋孙武所著，十三篇，是世界最早的军事理论经典，讲「不战而屈人之兵」的全胜之道。
-其核心在「谋」：知己知彼、因敌制胜、避实击虚、兵形如水——不尚硬拼，而重态势与主动权的争夺。
-《孙子》早已超越军事：商战、竞技、外交皆引其智；「上兵伐谋，其次伐交」的层级，至今是战略思维的范本。
-它最深的洞见是「慎战」：兵凶战危，故以「全」为贵。一部讲打仗的书，底色竟是「能不打就不打」的克制。""",
-C("孙子兵法", "szbf-1"), CH("谋"), ["孙子", "兵法", "谋略"])
-
-E("diji-bingqi", "城防与兵器", "地理·民族·军事", "兵制战事", "攻与守的反复较量。",
-"""冷兵器时代，城防是生存的硬指标：夯土城墙、护城河、敌楼、瓮城，构成层层设防；攻方则以冲车、云梯、抛石机破之。
-兵器由石、骨而铜、铁：戈矛剑戟、弩机（诸葛弩）、甲胄，秦俑坑已见标准军工；火药后，火铳、火炮改写攻防。
-长城是极致的「线性防御」：以连绵墙体遮断骑兵南下，烽燧示警、戍堡驻屯，把「拒敌于外」做到工程极限。
-城与器，一守一攻，是古人对「安全」的两种求解；它们的演进，写满了技术与人谋的反复较量。""",
-None, OB("greatwall"), ["城防", "兵器", "军事"])
-
-E("diji-yizhan", "驿传与交通", "地理·民族·军事", "交通驿传", "没有电讯时代的「信息基础设施」。",
-"""驿传是古代的「邮政加驿站」：以亭、驿、铺相连，供公文递送、官员往来、军情飞报，是帝国神经系统。
-秦修驰道、汉置邮亭，唐有「一驿过一驿」的急递，铺马星夜兼程；「八百里加急」说的就是驿传的速度极限。
-驿站兼营接待、转输、情报，沿大道形成市镇；它不仅运信，也运人、运货、运政令，维系着庞大国家的「实时」联络。
-在没电讯的年代，驿传就是「信息基础设施」——它让中央的政令，能真正抵达边陲，也让边情能及时回奏庙堂。""",
-None, CH("驿"), ["驿传", "邮传", "交通"])
-
-E("diji-jiangyu", "疆域变迁", "地理·民族·军事", "疆域山川", "随国力与族群消长而伸缩的版图。",
-"""中国疆域并非一成：汉唐辽阔、两宋偏安、元极盛、明清底定，版图随国力与族群消长而伸缩，最终凝成今日之轮廓。
-界定疆域靠的不止刀兵：屯田、移民、设郡、互市、朝贡，软硬并举，把「控制」化入日常治理与贸易网络。
-边疆的「一体多元」是常态：草原、绿洲、高原、海岸，各有治理逻辑；「因俗而治」往往比强行同化更持久。
-疆域史教会我们谦逊：今天的边界，是漫长磨合的结果；每一寸土地，都叠着多层的历史与多重的人群记忆。""",
-C("禹贡", "yg-2"), CH("疆"), ["疆域", "地理", "历史"])
-
-E("diji-fangyan", "方言地理", "地理·民族·军事", "疆域山川", "地上的声音化石，活着的汉语史。",
-"""汉语方言七大区（官话、吴、闽、粤、客、湘、赣等），是历史上人口迁徙、山川阻隔、政权分合在地上的「声音化石」。
-方言不仅差异在语音，更藏古语：粤语存中古入声、闽南语留中原古音，俨然「活着的汉语史」；俗语、称谓亦见地方心智。
-方言与地域文化互为表里：一方水土养一方话，也养一方戏、一方食、一方性情；「乡音」是身份最柔软的锚。
-推广通用语利沟通，留住方言存多样。方言地理提醒：中国的「统一」，从来包容着声音的「不同」。""",
-None, CH("言"), ["方言", "地理", "语言"])
-
-E("diji-diming", "地名文化", "地理·民族·军事", "疆域山川", "刻在大地上的微缩方志。",
-"""地名是刻在大地上的历史：因山（泰山）、因水（济宁）、因事（邯郸）、因族（姬姓封地）、因方位（洛阳、江阴），各有来由。
-许多地名沿用千年：「长安」寓长治久安、「广陵」记广被陵谷，读地名如翻一部微缩方志，可窥移民、政区、族群的迁徙轨迹。
-地名也记伤痛与融合：边地「某某卫」「某某所」（天津卫、威海卫）是军事遗存；「某某营」「某某屯」常是屯田驻军之痕。
-地名是最廉价的史书——不必进博物馆，走在路上，每一步都可能踩着一个被遗忘的故事。""",
-None, CH("名"), ["地名", "文化", "地理"])
 
 # ============ 写出 entries.json ============
-import collections
-by_dom = collections.Counter(e["domain"] for e in entries)
+dist = collections.Counter(e['domain'] for e in entries)
+empty = [e["id"] for e in entries if not e["body"]]
 json.dump({"entries": entries}, open("data/entries.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
-print("=== 写入完成 ===")
-print("条目总数：", len(entries))
-for k, v in by_dom.items():
-    print(f"  {k}: {v}")
-# 简单自检：重复 id
-ids = [e["id"] for e in entries]
-dups = [i for i in set(ids) if ids.count(i) > 1]
-print("重复 id：", dups if dups else "无")
+print("条目总数:", len(entries))
+print('各领域分布:', dict(dist))
+print("使用旧正文(待写厚)的条目数:", len(empty))
