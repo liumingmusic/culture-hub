@@ -2,26 +2,29 @@
 # 本文件由 scripts/_emit.py 从 data/entries.json 生成（仅元数据）。
 # 正文长文集中在 scripts/bodies.py 的 BODIES 字典中，便于逐篇维护。
 import json, collections
-from bodies import BODIES, EXTRA, EXTRA2
-from bodies_extra3 import EXTRA3
-from bodies_hanzi import BODIES as _B_HZ
-from bodies_jiesu import BODIES as _B_JS
-from bodies_yishu import BODIES as _B_YS
-from bodies_liyi import BODIES as _B_LY
-from bodies_yiyao import BODIES as _B_YY
-from bodies_keji import BODIES as _B_KJ
-from bodies_dili import BODIES as _B_DL
-for _b in (_B_HZ, _B_JS, _B_YS, _B_LY, _B_YY, _B_KJ, _B_DL):
+
+# 正文长文(BODIES) 与「延伸资料」(REFS) 分领域维护于各 bodies_*.py
+from bodies_sixiang import BODIES as _B_SX, REFS as _R_SX
+from bodies_lishi   import BODIES as _B_LS, REFS as _R_LS
+from bodies_hanzi   import BODIES as _B_HZ, REFS as _R_HZ
+from bodies_jiesu   import BODIES as _B_JS, REFS as _R_JS
+from bodies_yishu   import BODIES as _B_YS, REFS as _R_YS
+from bodies_liyi    import BODIES as _B_LY, REFS as _R_LY
+from bodies_yiyao   import BODIES as _B_YY, REFS as _R_YY
+from bodies_keji    import BODIES as _B_KJ, REFS as _R_KJ
+from bodies_dili    import BODIES as _B_DL, REFS as _R_DL
+
+BODIES = {}
+for _b in (_B_SX, _B_LS, _B_HZ, _B_JS, _B_YS, _B_LY, _B_YY, _B_KJ, _B_DL):
     BODIES.update(_b)
 
-# 合并所有补文层（BODIES + EXTRA + EXTRA2 + EXTRA3）为完整正文，段落间以空行分隔；
-# 合并后清空分层字典，使下方 E() 调用只读取已合并的 BODIES。
-for _cid in set(list(BODIES) + list(EXTRA) + list(EXTRA2) + list(EXTRA3)):
-    _parts = [BODIES.get(_cid, ""), EXTRA.get(_cid, ""), EXTRA2.get(_cid, ""), EXTRA3.get(_cid, "")]
-    _full = "\n\n".join(p for p in _parts if p).strip()
-    if _full:
-        BODIES[_cid] = _full
+REFS = {}
+for _r in (_R_SX, _R_LS, _R_HZ, _R_JS, _R_YS, _R_LY, _R_YY, _R_KJ, _R_DL):
+    REFS.update(_r)
+
+# 与旧分层兼容：置空，使下方 E() 调用里的 EXTRA/EXTRA2 取值为空
 EXTRA = {}; EXTRA2 = {}; EXTRA3 = {}
+
 import json as _json
 _OLD = {e["id"]: e["body"] for e in _json.load(open("data/entries.json", encoding="utf-8"))["entries"]}
 
@@ -33,6 +36,7 @@ def E(id, title, domain, sub, summary, body, classic, art, tags):
         "id": id, "title": title, "domain": domain, "sub": sub,
         "summary": summary, "body": body, "classic": classic,
         "art": art, "tags": tags,
+        "extends": REFS.get(id, {}),
     })
 
 

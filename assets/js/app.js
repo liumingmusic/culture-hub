@@ -332,6 +332,28 @@
         "</div>"
       : '<div class="rail-empty">本条暂无跨应用拓展（相关应用将持续接入）。</div>';
 
+    // 延伸资料（出处链接 / 参考书目 / 相关条目）
+    var ext = e.extends || {};
+    var extLinks = (ext.links || []).map(function (l) {
+      return '<a class="ext-link" href="' + esc(l.url) + '" target="_blank" rel="noopener">' + esc(l.title) + " ↗</a>";
+    }).join("");
+    var extBooks = (ext.books || []).map(function (b) {
+      return '<span class="ext-book">' + esc(b) + "</span>";
+    }).join("");
+    var extRel = (ext.related || []).map(function (rid) {
+      var re = null;
+      for (var i = 0; i < DATA.entries.length; i++) if (DATA.entries[i].id === rid) { re = DATA.entries[i]; break; }
+      if (!re) return "";
+      return '<span class="ext-rel" data-entry="' + esc(rid) + '" style="--dc:' + colorOf(re.domain) + '">' + esc(re.title) + "</span>";
+    }).join("");
+    var extHTML = (extLinks || extBooks || extRel)
+      ? '<div class="ext"><div class="ext-title">延伸资料</div>' +
+        (extLinks ? '<div class="ext-sec"><div class="ext-h">出处链接</div><div class="ext-links">' + extLinks + "</div></div>" : "") +
+        (extBooks ? '<div class="ext-sec"><div class="ext-h">参考书目</div><div class="ext-books">' + extBooks + "</div></div>" : "") +
+        (extRel ? '<div class="ext-sec"><div class="ext-h">相关条目</div><div class="ext-rels">' + extRel + "</div></div>" : "") +
+        "</div>"
+      : "";
+
     app.innerHTML =
       '<button class="btn-back" data-home="1">← 返回首页</button>' +
       '<div class="detail-head">' +
@@ -358,6 +380,7 @@
         "</div>" +
       classicHTML +
       '<div class="tags">' + tagsHTML + "</div>" +
+      extHTML +
       '<div class="rail"><div class="rail-title">拓展 · 相关应用</div>' + railHTML + "</div>";
   }
 
