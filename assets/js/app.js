@@ -242,7 +242,7 @@
       return e.domain === d.name;
     });
     var subs = d.subs;
-    var chips = ['<button class="tag" data-sub="" style="background:' + d.color + ';color:#fff;border:none">全部</button>']
+    var chips = ['<button class="tag sub-active" data-sub="">全部</button>']
       .concat(
         subs.map(function (s) {
           return '<button class="tag" data-sub="' + esc(s) + '">' + esc(s) + "</button>";
@@ -256,7 +256,7 @@
       "</div>" +
       '<h1 style="color:' + d.color + '">' + esc(d.name) + "</h1>" +
       '<div class="sub">' + esc(d.desc) + "</div></div>" +
-      '<div class="tags" id="subchips">' + chips + "</div>" +
+      '<div class="tags" id="subchips" style="--dc:' + d.color + '">' + chips + "</div>" +
       '<div class="entry-list" id="domlist" style="margin-top:16px">' +
       list.map(entryCard).join("") +
       "</div>";
@@ -265,6 +265,9 @@
     chipWrap.addEventListener("click", function (ev) {
       var btn = ev.target.closest("[data-sub]");
       if (!btn) return;
+      var all = chipWrap.querySelectorAll(".tag");
+      for (var i = 0; i < all.length; i++) all[i].classList.remove("sub-active");
+      btn.classList.add("sub-active");
       var sub = btn.getAttribute("data-sub");
       var filtered = sub
         ? list.filter(function (e) {

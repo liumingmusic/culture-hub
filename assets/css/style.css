@@ -144,6 +144,12 @@ a:hover { color: var(--seal-soft); }
   font-size: 12px; padding: 3px 10px; border-radius: 12px;
   background: var(--paper-2); color: var(--ink-2); border: 1px solid var(--line);
 }
+button.tag { cursor: pointer; font-family: inherit; transition: background .15s, color .15s; }
+button.tag:hover { border-color: var(--dc, var(--seal)); color: var(--dc, var(--seal)); }
+.tag.sub-active {
+  background: var(--dc, var(--seal)); color: #fff; border-color: transparent;
+}
+button.tag.sub-active:hover { color: #fff; }
 
 /* ---------- 详情页 ---------- */
 .detail-head { margin-top: 20px; }
